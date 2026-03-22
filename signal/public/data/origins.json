@@ -1,0 +1,706 @@
+{
+  "clusters": [
+    {
+      "topic_id": 0,
+      "name": "0_fucks_painting_digital_cat",
+      "color": "#1D9E75",
+      "origin_subreddit": "Liberal",
+      "first_date": "2024-07-26",
+      "days_to_spread": 104,
+      "spread_to": [
+        "Anarchism",
+        "worldpolitics",
+        "socialism",
+        "democrats",
+        "Republican",
+        "neoliberal",
+        "Conservative",
+        "politics"
+      ],
+      "spread_detail": [
+        {
+          "subreddit": "Anarchism",
+          "days_after": 104
+        },
+        {
+          "subreddit": "worldpolitics",
+          "days_after": 109
+        },
+        {
+          "subreddit": "socialism",
+          "days_after": 156
+        },
+        {
+          "subreddit": "democrats",
+          "days_after": 181
+        }
+      ],
+      "first_post": {
+        "author": "Kiflaam",
+        "subreddit": "Liberal",
+        "text": "I'm guessing there's a list somewhere. Can someone please point me towards it?",
+        "date": "2024-07-26",
+        "score": 32
+      },
+      "top_post": {
+        "author": "Afterswiftie",
+        "subreddit": "democrats",
+        "text": "\ud83d\udea8This Six-Word Declaration Is Exploding on Twitter\ud83d\udea8: 250,000 Likes in Hours",
+        "date": "2025-02-04",
+        "score": 27068
+      },
+      "earliest_posts": [
+        {
+          "author": "Kiflaam",
+          "subreddit": "Liberal",
+          "text": "I'm guessing there's a list somewhere. Can someone please point me towards it?",
+          "date": "2024-07-26",
+          "score": 32
+        },
+        {
+          "author": "Walk1000Miles",
+          "subreddit": "Liberal",
+          "text": "It's about time!",
+          "date": "2024-07-29",
+          "score": 715
+        },
+        {
+          "author": "Walk1000Miles",
+          "subreddit": "Liberal",
+          "text": "The Power of Tim Walz's Joyful Charm",
+          "date": "2024-08-08",
+          "score": 66
+        },
+        {
+          "author": "neilmod",
+          "subreddit": "Liberal",
+          "text": "Any bets on what?",
+          "date": "2024-08-08",
+          "score": 18
+        },
+        {
+          "author": "stuffandthings83",
+          "subreddit": "Liberal",
+          "text": "He\u2019s making a fool of himself",
+          "date": "2024-09-11",
+          "score": 286
+        }
+      ]
+    },
+    {
+      "topic_id": 1,
+      "name": "1_anarchist_anarchism_ive_socialist",
+      "color": "#7F77DD",
+      "origin_subreddit": "Liberal",
+      "first_date": "2024-08-23",
+      "days_to_spread": 76,
+      "spread_to": [
+        "Anarchism",
+        "worldpolitics",
+        "socialism",
+        "PoliticalDiscussion",
+        "democrats",
+        "Republican",
+        "neoliberal",
+        "Conservative",
+        "politics"
+      ],
+      "spread_detail": [
+        {
+          "subreddit": "Anarchism",
+          "days_after": 76
+        },
+        {
+          "subreddit": "worldpolitics",
+          "days_after": 85
+        },
+        {
+          "subreddit": "socialism",
+          "days_after": 128
+        },
+        {
+          "subreddit": "PoliticalDiscussion",
+          "days_after": 155
+        }
+      ],
+      "first_post": {
+        "author": "narfnarf123",
+        "subreddit": "Liberal",
+        "text": "I want to do something, and keep seeing this as an option. However, I don\u2019t see any info on how you\u2019re prepared or what it truly entails. Can anyone enlighten me so I know if this is something I\u2019s actually be effective at? I want to help somehow.",
+        "date": "2024-08-23",
+        "score": 28
+      },
+      "top_post": {
+        "author": "load1991",
+        "subreddit": "socialism",
+        "text": "Exposing the ridiculous anti-socialist tactics of shrewd capitalists",
+        "date": "2025-01-11",
+        "score": 3388
+      },
+      "earliest_posts": [
+        {
+          "author": "narfnarf123",
+          "subreddit": "Liberal",
+          "text": "I want to do something, and keep seeing this as an option. However, I don\u2019t see any info on how you\u2019re prepared or what it truly entails. Can anyone enlighten me so I know if this is something I\u2019s actually be effective at? I want to help somehow.",
+          "date": "2024-08-23",
+          "score": 28
+        },
+        {
+          "author": "redder_ph",
+          "subreddit": "Liberal",
+          "text": "or if you want to volunteer and don't know where to start, join VSA's slack(link below). I just joined and will be phone banking until election day. They have an active community where you can get answers and sign up for multiple volunteer events. [",
+          "date": "2024-08-28",
+          "score": 48
+        },
+        {
+          "author": "inthesinbin",
+          "subreddit": "Liberal",
+          "text": "Does anyone know how to get tickets to a rally or event?",
+          "date": "2024-09-18",
+          "score": 8
+        },
+        {
+          "author": "Pete0730",
+          "subreddit": "Anarchism",
+          "text": "Hi all, working my way through Kropotkin and about to start Post-scarcity Anarchism from Bookchin. Does anyone have any recommendations for books or essay collections that are a little more recent, that do a little more reckoning with the digital age and the \"new right\" movements",
+          "date": "2024-11-07",
+          "score": 6
+        },
+        {
+          "author": "Fragrant-Meeting-421",
+          "subreddit": "Anarchism",
+          "text": "New account is because I don't want to dox myself I live in Burlington, and I'm looking for anything anarchist nearby. Mutual aid, direct action, study groups, protests, whatever may exist. I'm finding it difficult to find much, I know Food Not Bombs is here and I'm planning on j",
+          "date": "2024-11-07",
+          "score": 8
+        }
+      ]
+    },
+    {
+      "topic_id": 2,
+      "name": "2_democrats_election_vote_republicans",
+      "color": "#BA7517",
+      "origin_subreddit": "Liberal",
+      "first_date": "2024-07-24",
+      "days_to_spread": 106,
+      "spread_to": [
+        "Anarchism",
+        "worldpolitics",
+        "socialism",
+        "Republican",
+        "democrats",
+        "PoliticalDiscussion",
+        "neoliberal",
+        "Conservative",
+        "politics"
+      ],
+      "spread_detail": [
+        {
+          "subreddit": "Anarchism",
+          "days_after": 106
+        },
+        {
+          "subreddit": "worldpolitics",
+          "days_after": 115
+        },
+        {
+          "subreddit": "socialism",
+          "days_after": 163
+        },
+        {
+          "subreddit": "Republican",
+          "days_after": 183
+        }
+      ],
+      "first_post": {
+        "author": "Doom_Walker",
+        "subreddit": "Liberal",
+        "text": "Even if it was true her family once owned slaves , which I'm pretty sure they didn't. Then what would that have to do with now? Aren't conservatives always saying you can't hold them accountable for what their family did in the 1700s? Are they seriously trying to win over black v",
+        "date": "2024-07-24",
+        "score": 315
+      },
+      "top_post": {
+        "author": "teddybear41",
+        "subreddit": "democrats",
+        "text": "The United States of America and the people Vs. Donald J. Trump, and the GOP party",
+        "date": "2025-02-14",
+        "score": 16640
+      },
+      "earliest_posts": [
+        {
+          "author": "Doom_Walker",
+          "subreddit": "Liberal",
+          "text": "Even if it was true her family once owned slaves , which I'm pretty sure they didn't. Then what would that have to do with now? Aren't conservatives always saying you can't hold them accountable for what their family did in the 1700s? Are they seriously trying to win over black v",
+          "date": "2024-07-24",
+          "score": 315
+        },
+        {
+          "author": "SandyPhagina",
+          "subreddit": "Liberal",
+          "text": "Why would they only go with the demagogue? There are many other Republicans who are much more competent and qualified. Why do they support this former *Pizza Hut stuffed-crust pizza spokesman? There are many other Republicans with real experience. Why are they fucking worshiping ",
+          "date": "2024-07-25",
+          "score": 44
+        },
+        {
+          "author": "reynvann65",
+          "subreddit": "Liberal",
+          "text": "Why do news outlets like CNN continue to make polite and understated commentary like *\"False Statements\"* rather than sply calling it out like it is. LIES. \"FACT CHECK: Trump told at least 10 *LIES* about Kamala Harris in a single rally speech.\" That's what the article should be ",
+          "date": "2024-07-25",
+          "score": 449
+        },
+        {
+          "author": "progress18",
+          "subreddit": "Liberal",
+          "text": "Donald Trump's gains with Black voters have been wiped out",
+          "date": "2024-07-25",
+          "score": 408
+        },
+        {
+          "author": "fufairytoo",
+          "subreddit": "Liberal",
+          "text": "We need to do everything we can to keep Republicans in the minority in both chambers. If we don't, we will not stand a chance of overhauling the crooked Supreme Court, abolishing the electorate (which is just stealing elections from the majority), or implementing other necessary ",
+          "date": "2024-07-26",
+          "score": 760
+        }
+      ]
+    },
+    {
+      "topic_id": 3,
+      "name": "3_musk_elon_doge_musks",
+      "color": "#D85A30",
+      "origin_subreddit": "Liberal",
+      "first_date": "2024-07-30",
+      "days_to_spread": 132,
+      "spread_to": [
+        "worldpolitics",
+        "socialism",
+        "Anarchism",
+        "democrats",
+        "Republican",
+        "PoliticalDiscussion",
+        "neoliberal",
+        "Conservative",
+        "politics"
+      ],
+      "spread_detail": [
+        {
+          "subreddit": "worldpolitics",
+          "days_after": 132
+        },
+        {
+          "subreddit": "socialism",
+          "days_after": 159
+        },
+        {
+          "subreddit": "Anarchism",
+          "days_after": 174
+        },
+        {
+          "subreddit": "democrats",
+          "days_after": 177
+        }
+      ],
+      "first_post": {
+        "author": "Walk1000Miles",
+        "subreddit": "Liberal",
+        "text": "\"He says this all the time now\": Maddow sounds the alarm on Trump's \"strange\" voting remarks",
+        "date": "2024-07-30",
+        "score": 510
+      },
+      "top_post": {
+        "author": "ObjectiveAd6551",
+        "subreddit": "politics",
+        "text": "Elon Musk Says Team Behind CBS's '60 Minutes' Deserves 'A Long Prison Sentence'",
+        "date": "2025-02-17",
+        "score": 33932
+      },
+      "earliest_posts": [
+        {
+          "author": "Walk1000Miles",
+          "subreddit": "Liberal",
+          "text": "\"He says this all the time now\": Maddow sounds the alarm on Trump's \"strange\" voting remarks",
+          "date": "2024-07-30",
+          "score": 510
+        },
+        {
+          "author": "progress18",
+          "subreddit": "Liberal",
+          "text": "'Interview crashed and burst into flames': Trump and Musk mocked amid stream's launch woes",
+          "date": "2024-08-13",
+          "score": 414
+        },
+        {
+          "author": "DonSalaam",
+          "subreddit": "Liberal",
+          "text": "Elon Musk Is a National Security Risk",
+          "date": "2024-09-18",
+          "score": 558
+        },
+        {
+          "author": "Boubbie1975",
+          "subreddit": "Liberal",
+          "text": "Anybody else getting nervous about how Trump and Elon said they were going to trash the economy immediately and now Elon is moving all his kids and baby mommas to a compound? I'm thinking about starting to stockpile supplies. Talk me down.",
+          "date": "2024-11-08",
+          "score": 76
+        },
+        {
+          "author": "IGottaKnit",
+          "subreddit": "Liberal",
+          "text": "OK, I'm not lever enough. Someone out there needs to come up with Trump Administration Bingo - only square I know for sure I'd put on the board is Trump Breaks Up With Elon.",
+          "date": "2024-11-14",
+          "score": 3
+        }
+      ]
+    },
+    {
+      "topic_id": 4,
+      "name": "4_ukraine_russia_europe_european",
+      "color": "#888780",
+      "origin_subreddit": "Liberal",
+      "first_date": "2024-09-21",
+      "days_to_spread": 59,
+      "spread_to": [
+        "Anarchism",
+        "socialism",
+        "worldpolitics",
+        "democrats",
+        "Republican",
+        "PoliticalDiscussion",
+        "neoliberal",
+        "Conservative",
+        "politics"
+      ],
+      "spread_detail": [
+        {
+          "subreddit": "Anarchism",
+          "days_after": 59
+        },
+        {
+          "subreddit": "socialism",
+          "days_after": 99
+        },
+        {
+          "subreddit": "worldpolitics",
+          "days_after": 123
+        },
+        {
+          "subreddit": "democrats",
+          "days_after": 124
+        }
+      ],
+      "first_post": {
+        "author": "IcyOlive8202",
+        "subreddit": "Liberal",
+        "text": "Donald Trump on Fox &amp; Friends: \"Look, we\u2019re under siege and no country has ever suffered like we have for the last three-and-a-half, almost four years,\" Compassionate as always . I could name 20-30 countries today that would disagree but might as well start with Ukraine. And ",
+        "date": "2024-09-21",
+        "score": 85
+      },
+      "top_post": {
+        "author": "feed_meknowledge",
+        "subreddit": "politics",
+        "text": "Trump wants to halve US defense spending and let Russia back into G7 after Putin call",
+        "date": "2025-02-17",
+        "score": 8684
+      },
+      "earliest_posts": [
+        {
+          "author": "IcyOlive8202",
+          "subreddit": "Liberal",
+          "text": "Donald Trump on Fox &amp; Friends: \"Look, we\u2019re under siege and no country has ever suffered like we have for the last three-and-a-half, almost four years,\" Compassionate as always . I could name 20-30 countries today that would disagree but might as well start with Ukraine. And ",
+          "date": "2024-09-21",
+          "score": 85
+        },
+        {
+          "author": "IcyOlive8202",
+          "subreddit": "Liberal",
+          "text": "His brainwashed cult members (he must be a Jedi cause that mind trick is working on half the country) will defend anything he says and does. If you haven't heard about his press conference with Zelensky, it was absolutely disgusting. Most of it was praising Zelensky for helping h",
+          "date": "2024-10-01",
+          "score": 129
+        },
+        {
+          "author": "Walk1000Miles",
+          "subreddit": "Liberal",
+          "text": "Kremlin confirms Trump sent Russia Covid-19 tests, after former president denied Bob Woodward claim",
+          "date": "2024-10-11",
+          "score": 769
+        },
+        {
+          "author": "Savings-Pumpkin3378",
+          "subreddit": "Liberal",
+          "text": "Donate to help with aid and defence in Ukraine.",
+          "date": "2024-11-18",
+          "score": 11
+        },
+        {
+          "author": "Doom_Walker",
+          "subreddit": "Liberal",
+          "text": "He won't do a god damn thing while Biden is president. Democrats don't fall for his bluffs, and he knows it. But the goal isn't to scare Democrats it's to scare Trump and Republicans. Whether it's an incursion into Finland, tactical nuclear weapons in Ukraine, nuclear tests next ",
+          "date": "2024-11-19",
+          "score": 205
+        }
+      ]
+    },
+    {
+      "topic_id": 5,
+      "name": "5_ice_immigration_migrants_immigrants",
+      "color": "#D4537E",
+      "origin_subreddit": "Liberal",
+      "first_date": "2024-08-04",
+      "days_to_spread": 95,
+      "spread_to": [
+        "Anarchism",
+        "socialism",
+        "Republican",
+        "democrats",
+        "PoliticalDiscussion",
+        "neoliberal",
+        "worldpolitics",
+        "Conservative",
+        "politics"
+      ],
+      "spread_detail": [
+        {
+          "subreddit": "Anarchism",
+          "days_after": 95
+        },
+        {
+          "subreddit": "socialism",
+          "days_after": 149
+        },
+        {
+          "subreddit": "Republican",
+          "days_after": 172
+        },
+        {
+          "subreddit": "democrats",
+          "days_after": 174
+        }
+      ],
+      "first_post": {
+        "author": "Walk1000Miles",
+        "subreddit": "Liberal",
+        "text": "What the historic prisoner swap might mean for the future",
+        "date": "2024-08-04",
+        "score": 11
+      },
+      "top_post": {
+        "author": "z8675309z",
+        "subreddit": "politics",
+        "text": "Border Czar Whines It\u2019s Been \u2018Hard\u2019 to Find Undocumented Immigrants",
+        "date": "2025-02-16",
+        "score": 23576
+      },
+      "earliest_posts": [
+        {
+          "author": "Walk1000Miles",
+          "subreddit": "Liberal",
+          "text": "What the historic prisoner swap might mean for the future",
+          "date": "2024-08-04",
+          "score": 11
+        },
+        {
+          "author": "Walk1000Miles",
+          "subreddit": "Liberal",
+          "text": "Many Americans say immigration is out of control, but 24 hours on the Texas-Mexico border showed a new reality. Will it last?",
+          "date": "2024-09-25",
+          "score": 206
+        },
+        {
+          "author": "Walk1000Miles",
+          "subreddit": "Liberal",
+          "text": "The Memo: Trump campaign struggles to contain Puerto Rico October surprise",
+          "date": "2024-10-29",
+          "score": 654
+        },
+        {
+          "author": "ullrs_bow",
+          "subreddit": "Anarchism",
+          "text": "No need to go more in depth than that. With the impending doom of the deportation of \"illegal immigrants\", is there any resources we can push out on socials? Is that a thing? I've seen the WARM lines post is there something similar for our immigrant brothers and sisters? Keep you",
+          "date": "2024-11-07",
+          "score": 39
+        },
+        {
+          "author": "filthyhippie76",
+          "subreddit": "Anarchism",
+          "text": "Here's what I foresee coming and a big question for us all. J20 will arrive. There may or may not be massive mobilizations by then, most likely not IMO given the current silence in the streets. In either case, Trump will hit the ground running, hard. It is absolutely clear at thi",
+          "date": "2024-11-11",
+          "score": 3
+        }
+      ]
+    },
+    {
+      "topic_id": 6,
+      "name": "6_tariffs_canada_trade_tariff",
+      "color": "#378ADD",
+      "origin_subreddit": "Liberal",
+      "first_date": "2024-07-28",
+      "days_to_spread": 107,
+      "spread_to": [
+        "Anarchism",
+        "socialism",
+        "democrats",
+        "Republican",
+        "PoliticalDiscussion",
+        "neoliberal",
+        "Conservative",
+        "politics"
+      ],
+      "spread_detail": [
+        {
+          "subreddit": "Anarchism",
+          "days_after": 107
+        },
+        {
+          "subreddit": "socialism",
+          "days_after": 178
+        },
+        {
+          "subreddit": "democrats",
+          "days_after": 181
+        },
+        {
+          "subreddit": "Republican",
+          "days_after": 185
+        }
+      ],
+      "first_post": {
+        "author": "pollo_de_mar",
+        "subreddit": "Liberal",
+        "text": "Many Trump voters are upset that prices at the grocery store and housing prices have risen under Biden. They believe that somehow Trump is going to fix this. Many will choose Trump solely on this issue. Kamala needs to press the point that Trump is not going to fix this, he is go",
+        "date": "2024-07-28",
+        "score": 185
+      },
+      "top_post": {
+        "author": "Spiderwig144",
+        "subreddit": "democrats",
+        "text": "Canada reportedly has a detailed retaliation plan to Trump\u2019s tariffs that will seek to hurt Republican states the most",
+        "date": "2025-02-01",
+        "score": 5698
+      },
+      "earliest_posts": [
+        {
+          "author": "pollo_de_mar",
+          "subreddit": "Liberal",
+          "text": "Many Trump voters are upset that prices at the grocery store and housing prices have risen under Biden. They believe that somehow Trump is going to fix this. Many will choose Trump solely on this issue. Kamala needs to press the point that Trump is not going to fix this, he is go",
+          "date": "2024-07-28",
+          "score": 185
+        },
+        {
+          "author": "FeistyMeasurement579",
+          "subreddit": "Anarchism",
+          "text": "Hey, so I am trying to work with my local leftist coffeeshop to distribute Plan B by mail to people in red states who need it. It costs $10.50ish to ship anywhere in the US and my coffeeshop gives Plan B out for free. I will need help with eating the shipping cost (because I'm br",
+          "date": "2024-11-13",
+          "score": 84
+        },
+        {
+          "author": "KarlaSofen234",
+          "subreddit": "Liberal",
+          "text": "All of the things going on like tariff, cut on benefits, block OT pay, Palestine destruction... are all things he promised he'll do, but they became flabbergasted when he says thats on his agenda. Like bros, you are regretting them now, why didn;t you bother to look things up bef",
+          "date": "2024-11-26",
+          "score": 381
+        },
+        {
+          "author": "Walk1000Miles",
+          "subreddit": "Liberal",
+          "text": "IMO? If you can afford to? Purchase big ticket items before he takes office. Otherwise? You, as the consumer, will pay the price hike(s). As consumers? The price increase (so called \"tariffs\") will be passed to us.",
+          "date": "2024-11-26",
+          "score": 150
+        },
+        {
+          "author": "GarbageCleric",
+          "subreddit": "Liberal",
+          "text": "The proposed tariffs seem like an awful idea all around, and everyone who thinks about it or knows anything about tariffs and trade seems to oppose them. So, what are they trying to do? Is it just arrogance and stupidity? Is it a threat meant to get some sort of concessions? Is t",
+          "date": "2024-11-27",
+          "score": 113
+        }
+      ]
+    },
+    {
+      "topic_id": 7,
+      "name": "7_federal_employees_court_workers",
+      "color": "#639922",
+      "origin_subreddit": "Liberal",
+      "first_date": "2024-08-06",
+      "days_to_spread": 106,
+      "spread_to": [
+        "Anarchism",
+        "worldpolitics",
+        "socialism",
+        "democrats",
+        "Republican",
+        "PoliticalDiscussion",
+        "neoliberal",
+        "Conservative",
+        "politics"
+      ],
+      "spread_detail": [
+        {
+          "subreddit": "Anarchism",
+          "days_after": 106
+        },
+        {
+          "subreddit": "worldpolitics",
+          "days_after": 121
+        },
+        {
+          "subreddit": "socialism",
+          "days_after": 155
+        },
+        {
+          "subreddit": "democrats",
+          "days_after": 171
+        }
+      ],
+      "first_post": {
+        "author": "Walk1000Miles",
+        "subreddit": "Liberal",
+        "text": "Can Trump fire SEC Chair Gary Gensler on Day One",
+        "date": "2024-08-06",
+        "score": 18
+      },
+      "top_post": {
+        "author": "Rock-n-roll-Kevin",
+        "subreddit": "politics",
+        "text": "\u2018We\u2019ve been betrayed:\u2019 Local veterans angry after being laid off by Trump administration",
+        "date": "2025-02-15",
+        "score": 41400
+      },
+      "earliest_posts": [
+        {
+          "author": "Walk1000Miles",
+          "subreddit": "Liberal",
+          "text": "Can Trump fire SEC Chair Gary Gensler on Day One",
+          "date": "2024-08-06",
+          "score": 18
+        },
+        {
+          "author": "Walk1000Miles",
+          "subreddit": "Liberal",
+          "text": "Judge Chutkan ignites flurry of activity in Donald Trump\u2019s Jan. 6 case",
+          "date": "2024-08-08",
+          "score": 185
+        },
+        {
+          "author": "progress18",
+          "subreddit": "Liberal",
+          "text": "Justice Department antitrust suit against RealPage alleges collusion with landlords; The suit alleges the software company colluded with landlords to raise rents.",
+          "date": "2024-08-23",
+          "score": 109
+        },
+        {
+          "author": "Walk1000Miles",
+          "subreddit": "Liberal",
+          "text": "Justice Ketanji Brown Jackson Says She Is 'Considering' Supporting an 'Enforceable' Supreme Court Ethics Code",
+          "date": "2024-09-03",
+          "score": 279
+        },
+        {
+          "author": "Walk1000Miles",
+          "subreddit": "Liberal",
+          "text": "Jan. 6 hearing live updates: Trump, through attorney, pleads not guilty",
+          "date": "2024-09-05",
+          "score": 43
+        }
+      ]
+    }
+  ]
+}

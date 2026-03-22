@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Signal Globe</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0A0C0E; overflow: hidden; }
+    canvas { display: block; }
+    #tooltip {
+      position: fixed;
+      pointer-events: none;
+      background: #111418;
+      border: 1px solid #1E2530;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-family: ui-monospace, monospace;
+      font-size: 11px;
+      color: #E2E8F0;
+      display: none;
+      z-index: 100;
+      max-width: 200px;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <div id="tooltip"></div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+    // ── Scene setup ──────────────────────────────────────────────────────────
+    const W = window.innerWidth;
+    const H = window.innerHeight;
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(W, H);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    document.body.appendChild(renderer.domElement);
+
+    const scene  = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 100);
+    camera.position.set(0, 0, 2.8);
+
+    // ── Globe ────────────────────────────────────────────────────────────────
+    const globeGeo = new THREE.SphereGeometry(1, 64, 64);
+    const globeMat = new THREE.MeshPhongMaterial({
+      color: 0x0D2137, shininess: 8,
+      emissive: new THREE.Color(0x081828),
+      specular: new THREE.Color(0x1D9E75).multiplyScalar(0.15),
+    });
+    const globe = new THREE.Mesh(globeGeo, globeMat);
+    scene.add(globe);
+
+    // Wireframe overlay
+    const wireGeo = new THREE.SphereGeometry(1.001, 24, 24);
+    const wireMat = new THREE.MeshBasicMaterial({
+      color:       0x1D9E75,
+      wireframe:   true,
+      transparent: true,
+      opacity:     0.04,
+    });
+    scene.add(new THREE.Mesh(wireGeo, wireMat));
+
+    // Atmosphere
+    const atmGeo = new THREE.SphereGeometry(1.06, 32, 32);
+    const atmMat = new THREE.MeshBasicMaterial({
+      color:       0x1D9E75,
+      transparent: true,
+      opacity:     0.04,
+      side:        THREE.BackSide,
+    });
+    scene.add(new THREE.Mesh(atmGeo, atmMat));
+
+    // ── Lighting ─────────────────────────────────────────────────────────────
+    scene.add(new THREE.AmbientLight(0x445566, 1.4));
+    const sun = new THREE.DirectionalLight(0xffffff, 1.6);
+    sun.position.set(5, 3, 5);
+    scene.add(sun);
+    const fill = new THREE.DirectionalLight(0x334455, 0.5);
+    fill.position.set(-3, -1, -2);
+    scene.add(fill);
+
+    // ── Lat/lon → 3D ─────────────────────────────────────────────────────────
+    function latLonToVec3(lat, lon, r) {
+      const phi   = (90 - lat) * Math.PI / 180;
+      const theta = (lon + 180) * Math.PI / 180;
+      return new THREE.Vector3(
+        -r * Math.sin(phi) * Math.cos(theta),
+         r * Math.cos(phi),
+         r * Math.sin(phi) * Math.sin(theta)
+      );
+    }
+
+    // ── Events data ───────────────────────────────────────────────────────────
+    const EVENTS = [
+      { id:"cop25",    lat:40.4168,  lon:-3.7038,   date:"2019-12-02", title:"COP25 Madrid",              type:"cop",     intensity:8,  color:"#1D9E75" },
+      { id:"cop26",    lat:55.8609,  lon:-4.2490,   date:"2021-11-01", title:"COP26 Glasgow",             type:"cop",     intensity:10, color:"#1D9E75" },
+      { id:"cop27",    lat:27.9158,  lon:34.3300,   date:"2022-11-06", title:"COP27 Sharm el-Sheikh",     type:"cop",     intensity:9,  color:"#1D9E75" },
+      { id:"cop28",    lat:24.4539,  lon:54.3773,   date:"2023-11-30", title:"COP28 Dubai",               type:"cop",     intensity:9,  color:"#1D9E75" },
+      { id:"ys_ny",    lat:40.7128,  lon:-74.0060,  date:"2019-09-20", title:"NYC Climate Strike 250k",   type:"protest", intensity:9,  color:"#BA7517" },
+      { id:"ys_lon",   lat:51.5074,  lon:-0.1278,   date:"2019-09-20", title:"London Climate Strike",     type:"protest", intensity:7,  color:"#BA7517" },
+      { id:"ys_ber",   lat:52.5200,  lon:13.4050,   date:"2019-09-20", title:"Berlin Strike 270k",        type:"protest", intensity:8,  color:"#BA7517" },
+      { id:"ys_syd",   lat:-33.8688, lon:151.2093,  date:"2019-09-20", title:"Sydney Climate March",      type:"protest", intensity:6,  color:"#BA7517" },
+      { id:"ys_mum",   lat:19.0760,  lon:72.8777,   date:"2019-09-27", title:"Mumbai Youth Strike",       type:"protest", intensity:5,  color:"#BA7517" },
+      { id:"aus_fire", lat:-33.8688, lon:151.2093,  date:"2019-12-18", title:"Australia Bushfires",       type:"disaster",intensity:10, color:"#D85A30" },
+      { id:"pac_heat", lat:47.6062,  lon:-122.3321, date:"2021-06-28", title:"Pacific NW Heat Dome 49°C", type:"disaster",intensity:10, color:"#D85A30" },
+      { id:"ger_flood",lat:50.9333,  lon:6.9500,    date:"2021-07-14", title:"Germany Flood 180 dead",    type:"disaster",intensity:9,  color:"#D85A30" },
+      { id:"pak_flood",lat:25.3960,  lon:68.3578,   date:"2022-08-25", title:"Pakistan Floods",           type:"disaster",intensity:10, color:"#D85A30" },
+      { id:"can_fire", lat:53.7267,  lon:-127.6476, date:"2023-06-05", title:"Canada Wildfires",          type:"disaster",intensity:9,  color:"#D85A30" },
+      { id:"haw_fire", lat:20.8783,  lon:-156.6825, date:"2023-08-08", title:"Maui Wildfire Lahaina",     type:"disaster",intensity:9,  color:"#D85A30" },
+      { id:"lib_flood",lat:32.8872,  lon:13.1913,   date:"2023-09-11", title:"Libya Floods 10k dead",     type:"disaster",intensity:10, color:"#D85A30" },
+      { id:"ipcc_wg1", lat:46.2044,  lon:6.1432,    date:"2021-08-09", title:"IPCC AR6 WG1 — Code red",   type:"report",  intensity:9,  color:"#7F77DD" },
+      { id:"ipcc_wg2", lat:46.2044,  lon:6.1432,    date:"2022-02-28", title:"IPCC AR6 WG2",              type:"report",  intensity:8,  color:"#7F77DD" },
+      { id:"ipcc_wg3", lat:46.2044,  lon:6.1432,    date:"2022-04-04", title:"IPCC AR6 WG3 Mitigation",   type:"report",  intensity:7,  color:"#7F77DD" },
+      { id:"ipcc_syn", lat:46.2044,  lon:6.1432,    date:"2023-03-20", title:"IPCC AR6 Synthesis",        type:"report",  intensity:9,  color:"#7F77DD" },
+      { id:"ira",      lat:38.9072,  lon:-77.0369,  date:"2022-08-16", title:"US Inflation Reduction Act", type:"policy",  intensity:9,  color:"#378ADD" },
+      { id:"eufit",    lat:50.8503,  lon:4.3517,    date:"2021-07-14", title:"EU Fit for 55 package",     type:"policy",  intensity:7,  color:"#378ADD" },
+      { id:"cbam",     lat:50.8503,  lon:4.3517,    date:"2023-05-10", title:"EU Carbon Border Tax CBAM", type:"policy",  intensity:6,  color:"#378ADD" },
+      { id:"xr_lon19", lat:51.5074,  lon:-0.1278,   date:"2019-04-15", title:"XR London Oxford St",       type:"protest", intensity:7,  color:"#1D9E75" },
+      { id:"xr_ber19", lat:52.5200,  lon:13.4050,   date:"2019-06-17", title:"XR Berlin action",          type:"protest", intensity:5,  color:"#1D9E75" },
+      { id:"xr_aus21", lat:-35.3081, lon:149.1245,  date:"2021-09-13", title:"XR Australia Canberra",     type:"protest", intensity:6,  color:"#1D9E75" },
+      { id:"jsg_23",   lat:51.5074,  lon:-0.1278,   date:"2023-07-22", title:"Just Stop Oil M25",         type:"protest", intensity:7,  color:"#1D9E75" },
+      { id:"ys_par",   lat:48.8566,  lon:2.3522,    date:"2021-11-06", title:"Paris COP26 March",         type:"protest", intensity:7,  color:"#BA7517" },
+    ];
+
+    // ── Build event spheres ───────────────────────────────────────────────────
+    const eventMeshes = [];
+    let activeFilter = null;
+
+    function hexToThree(hex) {
+      return parseInt(hex.replace('#', ''), 16);
+    }
+
+    function buildEvents(filter) {
+      // Remove old event meshes
+      eventMeshes.forEach(m => scene.remove(m));
+      eventMeshes.length = 0;
+
+      EVENTS.forEach(evt => {
+        if (filter && evt.type !== filter) return;
+
+        const r    = 0.006 + (evt.intensity / 10) * 0.03;
+        const pos  = latLonToVec3(evt.lat, evt.lon, 1.01);
+        const geo  = new THREE.SphereGeometry(r, 8, 8);
+        const mat  = new THREE.MeshBasicMaterial({
+          color:       hexToThree(evt.color),
+          transparent: true,
+          opacity:     0.85,
+        });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.copy(pos);
+        mesh.userData = evt;
+        scene.add(mesh);
+        eventMeshes.push(mesh);
+
+        // Glow ring for high-intensity events
+        if (evt.intensity >= 8) {
+          const ringGeo = new THREE.RingGeometry(r * 1.8, r * 2.4, 16);
+          const ringMat = new THREE.MeshBasicMaterial({
+            color:       hexToThree(evt.color),
+            transparent: true,
+            opacity:     0.25,
+            side:        THREE.DoubleSide,
+          });
+          const ring = new THREE.Mesh(ringGeo, ringMat);
+          ring.position.copy(pos);
+          ring.lookAt(0, 0, 0);
+          scene.add(ring);
+          eventMeshes.push(ring);
+        }
+      });
+    }
+
+    buildEvents(null);
+
+    // ── Raycaster for click/hover ─────────────────────────────────────────────
+    const raycaster = new THREE.Raycaster();
+    const mouse     = new THREE.Vector2();
+    const tooltip   = document.getElementById('tooltip');
+
+    renderer.domElement.addEventListener('mousemove', (e) => {
+      mouse.x =  (e.clientX / W) * 2 - 1;
+      mouse.y = -(e.clientY / H) * 2 + 1;
+      raycaster.setFromCamera(mouse, camera);
+      const hits = raycaster.intersectObjects(eventMeshes.filter(m => m.userData.id));
+      if (hits.length > 0) {
+        const evt = hits[0].object.userData;
+        tooltip.style.display = 'block';
+        tooltip.style.left    = (e.clientX + 14) + 'px';
+        tooltip.style.top     = (e.clientY - 10) + 'px';
+        tooltip.innerHTML     = `<strong style="color:#E2E8F0">${evt.title}</strong><br><span style="color:#4A5568">${evt.date}</span><br><span style="color:${evt.color}">${evt.type} · intensity ${evt.intensity}/10</span>`;
+        renderer.domElement.style.cursor = 'pointer';
+      } else {
+        tooltip.style.display = 'none';
+        renderer.domElement.style.cursor = 'default';
+      }
+    });
+
+    renderer.domElement.addEventListener('click', (e) => {
+      mouse.x =  (e.clientX / W) * 2 - 1;
+      mouse.y = -(e.clientY / H) * 2 + 1;
+      raycaster.setFromCamera(mouse, camera);
+      const hits = raycaster.intersectObjects(eventMeshes.filter(m => m.userData.id));
+      if (hits.length > 0) {
+        const evt = hits[0].object.userData;
+        window.parent.postMessage({ type: 'EVENT_CLICK', id: evt.id, event: evt }, '*');
+      }
+    });
+
+    // ── postMessage from parent ───────────────────────────────────────────────
+    window.addEventListener('message', (e) => {
+      if (e.data?.type === 'SET_FILTER') {
+        activeFilter = e.data.typeFilter || null;
+        buildEvents(activeFilter);
+      }
+    });
+
+    // ── Mouse drag to rotate ──────────────────────────────────────────────────
+    let isDragging = false;
+    let prevMouse  = { x: 0, y: 0 };
+
+    renderer.domElement.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      prevMouse  = { x: e.clientX, y: e.clientY };
+    });
+    window.addEventListener('mouseup', () => { isDragging = false; });
+    window.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      const dx = (e.clientX - prevMouse.x) * 0.005;
+      const dy = (e.clientY - prevMouse.y) * 0.005;
+      globe.rotation.y += dx;
+      globe.rotation.x  = Math.max(-Math.PI/2, Math.min(Math.PI/2, globe.rotation.x + dy));
+      prevMouse = { x: e.clientX, y: e.clientY };
+    });
+
+    // ── Animate ───────────────────────────────────────────────────────────────
+    function animate() {
+      requestAnimationFrame(animate);
+      if (!isDragging) globe.rotation.y += 0.0008;
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    // ── Resize ────────────────────────────────────────────────────────────────
+    window.addEventListener('resize', () => {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    });
+  </script>
+</body>
+</html>
