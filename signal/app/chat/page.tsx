@@ -26,9 +26,12 @@ import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 
 function ChatPageContent() {
-  const { activeTopic } = useSignalStore();
+  const { activeTopic, investigationContext } = useSignalStore();
   const searchParams = useSearchParams();
-  const prefilledQuery = searchParams.get("q") ?? undefined;
+  const queryFromUrl = searchParams.get("q") ?? undefined;
+  const prefilledQuery = queryFromUrl ?? (investigationContext
+    ? `Investigate ${investigationContext.narrativeName ?? `topic #${investigationContext.topicId ?? "?"}`} from ${investigationContext.originSubreddit ?? "source communities"}.`
+    : undefined);
 
   return (
     <Shell>
@@ -48,6 +51,18 @@ function ChatPageContent() {
             }}
           >
             · retrieval scoped to topic #{activeTopic}
+          </span>
+        )}
+        {investigationContext?.narrativeName && (
+          <span
+            style={{
+              fontSize: 11,
+              color: "var(--coral)",
+              fontFamily: "var(--font-mono)",
+              marginLeft: 4,
+            }}
+          >
+            · context: {investigationContext.narrativeName}
           </span>
         )}
       </div>

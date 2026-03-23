@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
+import type { DatasetMeta } from "@/types";
 import { useSignalStore } from "@/lib/store";
 
 // ─── Nav config ──────────────────────────────────────────────────────────────
@@ -61,12 +62,52 @@ const ACTIVE_CLASS: Record<string, string> = {
 // ─── Time range chips ─────────────────────────────────────────────────────────
 const RANGES = ["Jul 2024", "Aug", "Sep", "Oct", "Nov", "Dec 2024", "Jan 2025", "All"];
 
+function toUnix(value: string, endOfDay = false): number {
+  const dt = new Date(value);
+  if (endOfDay) dt.setUTCHours(23, 59, 59, 0);
+  return Math.floor(dt.getTime() / 1000);
+}
+
+function resolveRange(range: string, meta: DatasetMeta | null): { start: number; end: number } {
+  const mapped: Record<string, { start: string; end: string }> = {
+    "Jul 2024": { start: "2024-07-01", end: "2024-07-31" },
+    "Aug": { start: "2024-08-01", end: "2024-08-31" },
+    "Sep": { start: "2024-09-01", end: "2024-09-30" },
+    "Oct": { start: "2024-10-01", end: "2024-10-31" },
+    "Nov": { start: "2024-11-01", end: "2024-11-30" },
+    "Dec 2024": { start: "2024-12-01", end: "2024-12-31" },
+    "Jan 2025": { start: "2025-01-01", end: "2025-01-31" },
+  };
+
+  if (range === "All") {
+    return {
+      start: toUnix(meta?.date_start ?? "2024-07-01"),
+      end: toUnix(meta?.date_end ?? "2025-02-28", true),
+    };
+  }
+
+  const value = mapped[range] ?? mapped["Jul 2024"];
+  return {
+    start: toUnix(value.start),
+    end: toUnix(value.end, true),
+  };
+}
+
 export default function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
-  const [activeRange, setActiveRange] = useState("All");
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const { activeTopic, setActiveTopic, meta, setMeta } = useSignalStore();
+  const {
+    activeTopic,
+    setActiveTopic,
+    activeRange,
+    setActiveRange,
+    setDateRange,
+    platforms,
+    togglePlatform,
+    meta,
+    setMeta,
+  } = useSignalStore();
 
   useEffect(() => {
     setMounted(true);
@@ -83,6 +124,11 @@ export default function Shell({ children }: { children: React.ReactNode }) {
         // Sidebar footer can render without metadata.
       });
   }, [meta, setMeta]);
+
+  useEffect(() => {
+    const { start, end } = resolveRange(activeRange, meta);
+    setDateRange(start, end);
+  }, [activeRange, meta, setDateRange]);
 
   const postsLabel = mounted && meta ? meta.total_posts.toLocaleString() : "—";
   const rangeLabel = mounted && meta ? `${meta.date_start} – ${meta.date_end}` : "—";
@@ -244,7 +290,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
             <button
               key={r}
               className={clsx("chip", activeRange === r && "active")}
-              onClick={() => setActiveRange(r)}
+              onClick={() => setActiveRange(r as typeof activeRange)}
               style={{ border: "none", background: "transparent" }}
             >
               {r}
@@ -263,15 +309,22 @@ export default function Shell({ children }: { children: React.ReactNode }) {
 
         {/* Platform badges */}
         <div style={{ display: "flex", gap: 5 }}>
-          {["Reddit", "Twitter/X"].map((p) => (
-            <span
-              key={p}
-              className="chip active"
-              style={{ pointerEvents: "none", cursor: "default" }}
-            >
-              {p}
-            </span>
-          ))}
+          <button
+            className={clsx("chip", platforms.includes("reddit") && "active")}
+            onClick={() => togglePlatform("reddit")}
+            style={{ border: "none", background: "transparent" }}
+            aria-label="Toggle Reddit data"
+          >
+            Reddit
+          </button>
+          <button
+            className={clsx("chip", platforms.includes("twitter") && "active")}
+            onClick={() => togglePlatform("twitter")}
+            style={{ border: "none", background: "transparent" }}
+            aria-label="Toggle Twitter/X data"
+          >
+            Twitter/X
+          </button>
         </div>
       </header>
 

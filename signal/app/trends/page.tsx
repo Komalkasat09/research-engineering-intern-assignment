@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import Shell from "@/components/Shell";
 import StatRow from "@/components/StatRow";
+import { useSignalStore } from "@/lib/store";
 
 interface TrendNarrative {
   topic_id: number;
@@ -47,6 +49,8 @@ function velocityBadge(change: number): string {
 }
 
 export default function TrendsPage() {
+  const router = useRouter();
+  const { setActiveTopic, setInvestigationContext } = useSignalStore();
   const [data, setData] = useState<TrendsResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -62,6 +66,30 @@ export default function TrendsPage() {
     if (!data?.top_narratives?.length) return 1;
     return Math.max(...data.top_narratives.map((n) => n.velocity_spike), 0.0001);
   }, [data]);
+
+  function primeInvestigation(narrative: TrendNarrative, note: string) {
+    setActiveTopic(narrative.topic_id);
+    setInvestigationContext({
+      source: "trends",
+      topicId: narrative.topic_id,
+      narrativeName: narrative.name,
+      originSubreddit: narrative.origin_subreddit,
+      topPostAuthor: narrative.top_post.author,
+      topPostScore: narrative.top_post.score,
+      note,
+      createdAt: Date.now(),
+    });
+  }
+
+  function openRoute(route: string, narrative: TrendNarrative, note: string) {
+    primeInvestigation(narrative, note);
+    router.push(route);
+  }
+
+  function openChatInvestigation(narrative: TrendNarrative) {
+    const prompt = `Investigate narrative \"${narrative.name}\" (topic #${narrative.topic_id}) from ${narrative.origin_subreddit}. Use evidence from top posts and list likely amplifiers, timeline inflection points, and innocent explanations.`;
+    openRoute(`/chat?q=${encodeURIComponent(prompt)}`, narrative, "Investigate narrative from trends card");
+  }
 
   return (
     <Shell>
@@ -186,6 +214,44 @@ export default function TrendsPage() {
                       }}
                     >
                       {narrative.post_count.toLocaleString()} posts · {narrative.origin_subreddit} · peak {narrative.peak_week}
+                    </div>
+
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
+                      <button
+                        className="chip active"
+                        style={{ border: "none", background: "rgba(29,158,117,0.14)", cursor: "pointer" }}
+                        onClick={() => openChatInvestigation(narrative)}
+                      >
+                        Investigate
+                      </button>
+                      <button
+                        className="chip"
+                        style={{ border: "none", background: "transparent", cursor: "pointer" }}
+                        onClick={() => openRoute("/graph", narrative, "Open graph from trends drillthrough")}
+                      >
+                        Graph
+                      </button>
+                      <button
+                        className="chip"
+                        style={{ border: "none", background: "transparent", cursor: "pointer" }}
+                        onClick={() => openRoute("/stance", narrative, "Open stance from trends drillthrough")}
+                      >
+                        Stance
+                      </button>
+                      <button
+                        className="chip"
+                        style={{ border: "none", background: "transparent", cursor: "pointer" }}
+                        onClick={() => openRoute("/map", narrative, "Open map from trends drillthrough")}
+                      >
+                        Map
+                      </button>
+                      <button
+                        className="chip"
+                        style={{ border: "none", background: "transparent", cursor: "pointer" }}
+                        onClick={() => openRoute(`/chat?q=${encodeURIComponent(`Show 5 raw posts for narrative ${narrative.name} with timestamps and scores.`)}`, narrative, "Request raw posts from trends drillthrough")}
+                      >
+                        Raw posts
+                      </button>
                     </div>
 
                     <div

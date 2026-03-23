@@ -173,7 +173,7 @@ interface Props {
 }
 
 export default function AskSignal({ initialMessage }: Props) {
-  const { activeTopic } = useSignalStore();
+  const { activeTopic, investigationContext } = useSignalStore();
   const bottomRef       = useRef<HTMLDivElement>(null);
   const abortRef        = useRef<AbortController | null>(null);
 
@@ -211,6 +211,7 @@ export default function AskSignal({ initialMessage }: Props) {
         body:    JSON.stringify({
           messages:    [...messages, userMsg].map((m) => ({ role: m.role, content: m.content })),
           activeTopic,
+          investigationContext,
         }),
         signal: abortRef.current.signal,
       });
@@ -266,6 +267,11 @@ export default function AskSignal({ initialMessage }: Props) {
         <div style={{ padding: "6px 20px", borderBottom: "1px solid #1E2530", background: "rgba(29,158,117,0.06)", fontSize: 11, color: "#1D9E75", fontFamily: "var(--font-mono)", display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
           <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#1D9E75" }} />
           scoped to topic #{activeTopic} — retrieval filtered to this cluster
+        </div>
+      )}
+      {investigationContext?.narrativeName && (
+        <div style={{ padding: "6px 20px", borderBottom: "1px solid #1E2530", background: "rgba(216,90,48,0.08)", fontSize: 11, color: "#D85A30", fontFamily: "var(--font-mono)", flexShrink: 0 }}>
+          investigation context: {investigationContext.narrativeName} · {investigationContext.originSubreddit ?? "unknown origin"}
         </div>
       )}
 

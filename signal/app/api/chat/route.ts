@@ -158,6 +158,16 @@ interface FaissMetaPost {
   text?: string;
 }
 
+interface InvestigationContextPayload {
+  source?: string;
+  topicId?: number | null;
+  narrativeName?: string;
+  originSubreddit?: string;
+  topPostAuthor?: string;
+  topPostScore?: number;
+  note?: string;
+}
+
 let cachedFaissMeta: FaissMetaPost[] | null = null;
 
 function loadFaissMeta(): FaissMetaPost[] | null {
@@ -257,9 +267,11 @@ export async function POST(req: NextRequest) {
 
   // Parse request body
   let messages: Array<{ role: string; content: string }>;
+  let investigationContext: InvestigationContextPayload | null = null;
   try {
     const body = await req.json();
     messages = body.messages;
+    investigationContext = body.investigationContext ?? null;
     if (!messages?.length) throw new Error("No messages");
   } catch {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
@@ -289,6 +301,21 @@ export async function POST(req: NextRequest) {
 
   const retrievedContext = realContext ?? retrieveContext(lastUserMessage);
 
+  const contextBlock = investigationContext
+    ? `
+
+ACTIVE INVESTIGATION CONTEXT:
+- source_view: ${investigationContext.source ?? "unknown"}
+- topic_id: ${investigationContext.topicId ?? "unknown"}
+- narrative_name: ${investigationContext.narrativeName ?? "unknown"}
+- origin_subreddit: ${investigationContext.originSubreddit ?? "unknown"}
+- top_post_author: ${investigationContext.topPostAuthor ?? "unknown"}
+- top_post_score: ${investigationContext.topPostScore ?? "unknown"}
+- analyst_note: ${investigationContext.note ?? "none"}
+
+Use this context to prioritize relevant evidence and keep your answer scoped to the active investigation.`
+    : "";
+
   // Build augmented system prompt with evidence
   const augmentedSystem = `${SYSTEM_PROMPT}
 
@@ -299,6 +326,8 @@ RETRIEVED EVIDENCE (top posts matching the query — treat these as primary sour
 ${retrievedContext}
 
 When answering, reference these posts by their ID (e.g., [post_001]) and quote brief excerpts to support your analysis. If the retrieved posts don't directly answer the question, say so and reason from general dataset patterns.
+
+${contextBlock}
 
 ---
 
