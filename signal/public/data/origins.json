@@ -4,6 +4,7 @@
       "topic_id": 0,
       "name": "0_fucks_painting_digital_cat",
       "color": "#1D9E75",
+      "post_count": 1024,
       "origin_subreddit": "Liberal",
       "first_date": "2024-07-26",
       "days_to_spread": 104,
@@ -16,6 +17,24 @@
         "neoliberal",
         "Conservative",
         "politics"
+      ],
+      "spread": [
+        {
+          "subreddit": "Anarchism",
+          "days_after": 104
+        },
+        {
+          "subreddit": "worldpolitics",
+          "days_after": 109
+        },
+        {
+          "subreddit": "socialism",
+          "days_after": 156
+        },
+        {
+          "subreddit": "democrats",
+          "days_after": 181
+        }
       ],
       "spread_detail": [
         {
@@ -91,6 +110,7 @@
       "topic_id": 1,
       "name": "1_anarchist_anarchism_ive_socialist",
       "color": "#7F77DD",
+      "post_count": 716,
       "origin_subreddit": "Liberal",
       "first_date": "2024-08-23",
       "days_to_spread": 76,
@@ -104,6 +124,24 @@
         "neoliberal",
         "Conservative",
         "politics"
+      ],
+      "spread": [
+        {
+          "subreddit": "Anarchism",
+          "days_after": 76
+        },
+        {
+          "subreddit": "worldpolitics",
+          "days_after": 85
+        },
+        {
+          "subreddit": "socialism",
+          "days_after": 128
+        },
+        {
+          "subreddit": "PoliticalDiscussion",
+          "days_after": 155
+        }
       ],
       "spread_detail": [
         {
@@ -179,6 +217,7 @@
       "topic_id": 2,
       "name": "2_democrats_election_vote_republicans",
       "color": "#BA7517",
+      "post_count": 623,
       "origin_subreddit": "Liberal",
       "first_date": "2024-07-24",
       "days_to_spread": 106,
@@ -192,6 +231,24 @@
         "neoliberal",
         "Conservative",
         "politics"
+      ],
+      "spread": [
+        {
+          "subreddit": "Anarchism",
+          "days_after": 106
+        },
+        {
+          "subreddit": "worldpolitics",
+          "days_after": 115
+        },
+        {
+          "subreddit": "socialism",
+          "days_after": 163
+        },
+        {
+          "subreddit": "Republican",
+          "days_after": 183
+        }
       ],
       "spread_detail": [
         {
@@ -267,6 +324,7 @@
       "topic_id": 3,
       "name": "3_musk_elon_doge_musks",
       "color": "#D85A30",
+      "post_count": 509,
       "origin_subreddit": "Liberal",
       "first_date": "2024-07-30",
       "days_to_spread": 132,
@@ -280,6 +338,24 @@
         "neoliberal",
         "Conservative",
         "politics"
+      ],
+      "spread": [
+        {
+          "subreddit": "worldpolitics",
+          "days_after": 132
+        },
+        {
+          "subreddit": "socialism",
+          "days_after": 159
+        },
+        {
+          "subreddit": "Anarchism",
+          "days_after": 174
+        },
+        {
+          "subreddit": "democrats",
+          "days_after": 177
+        }
       ],
       "spread_detail": [
         {
@@ -355,6 +431,7 @@
       "topic_id": 4,
       "name": "4_ukraine_russia_europe_european",
       "color": "#888780",
+      "post_count": 381,
       "origin_subreddit": "Liberal",
       "first_date": "2024-09-21",
       "days_to_spread": 59,
@@ -368,6 +445,24 @@
         "neoliberal",
         "Conservative",
         "politics"
+      ],
+      "spread": [
+        {
+          "subreddit": "Anarchism",
+          "days_after": 59
+        },
+        {
+          "subreddit": "socialism",
+          "days_after": 99
+        },
+        {
+          "subreddit": "worldpolitics",
+          "days_after": 123
+        },
+        {
+          "subreddit": "democrats",
+          "days_after": 124
+        }
       ],
       "spread_detail": [
         {
@@ -443,6 +538,7 @@
       "topic_id": 5,
       "name": "5_ice_immigration_migrants_immigrants",
       "color": "#D4537E",
+      "post_count": 294,
       "origin_subreddit": "Liberal",
       "first_date": "2024-08-04",
       "days_to_spread": 95,
@@ -456,6 +552,24 @@
         "worldpolitics",
         "Conservative",
         "politics"
+      ],
+      "spread": [
+        {
+          "subreddit": "Anarchism",
+          "days_after": 95
+        },
+        {
+          "subreddit": "socialism",
+          "days_after": 149
+        },
+        {
+          "subreddit": "Republican",
+          "days_after": 172
+        },
+        {
+          "subreddit": "democrats",
+          "days_after": 174
+        }
       ],
       "spread_detail": [
         {
@@ -531,6 +645,7 @@
       "topic_id": 6,
       "name": "6_tariffs_canada_trade_tariff",
       "color": "#378ADD",
+      "post_count": 281,
       "origin_subreddit": "Liberal",
       "first_date": "2024-07-28",
       "days_to_spread": 107,
@@ -543,6 +658,24 @@
         "neoliberal",
         "Conservative",
         "politics"
+      ],
+      "spread": [
+        {
+          "subreddit": "Anarchism",
+          "days_after": 107
+        },
+        {
+          "subreddit": "socialism",
+          "days_after": 178
+        },
+        {
+          "subreddit": "democrats",
+          "days_after": 181
+        },
+        {
+          "subreddit": "Republican",
+          "days_after": 185
+        }
       ],
       "spread_detail": [
         {
@@ -618,6 +751,7 @@
       "topic_id": 7,
       "name": "7_federal_employees_court_workers",
       "color": "#639922",
+      "post_count": 273,
       "origin_subreddit": "Liberal",
       "first_date": "2024-08-06",
       "days_to_spread": 106,
@@ -631,6 +765,24 @@
         "neoliberal",
         "Conservative",
         "politics"
+      ],
+      "spread": [
+        {
+          "subreddit": "Anarchism",
+          "days_after": 106
+        },
+        {
+          "subreddit": "worldpolitics",
+          "days_after": 121
+        },
+        {
+          "subreddit": "socialism",
+          "days_after": 155
+        },
+        {
+          "subreddit": "democrats",
+          "days_after": 171
+        }
       ],
       "spread_detail": [
         {

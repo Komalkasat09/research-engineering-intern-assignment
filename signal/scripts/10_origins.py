@@ -108,6 +108,7 @@ def main() -> None:
 
         earliest_posts = [format_post(r) for _, r in cluster.head(5).iterrows()]
         spread = sorted(spread, key=lambda x: x["days_after"])
+        post_count = int(len(cluster))
 
         meta = topic_meta.get(topic_id, {})
 
@@ -115,10 +116,12 @@ def main() -> None:
             "topic_id": int(topic_id),
             "name": meta.get("name") or f"topic {topic_id}",
             "color": meta.get("color") or TOPIC_COLORS.get(topic_id, "#3A4148"),
+            "post_count": post_count,
             "origin_subreddit": origin_sub,
             "first_date": format_post(first)["date"],
             "days_to_spread": int(spread[0]["days_after"]) if spread else 0,
             "spread_to": [s["subreddit"] for s in spread],
+            "spread": spread[:4],
             "spread_detail": spread[:4],
             "first_post": format_post(first),
             "top_post": format_post(top),

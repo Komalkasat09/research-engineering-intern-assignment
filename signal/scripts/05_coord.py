@@ -125,8 +125,23 @@ def build_heatmap_data(pairs: list[dict], df: pd.DataFrame) -> dict:
 
     top_accounts = sorted(account_counts, key=account_counts.get, reverse=True)[:40]
 
-    # Build month series
-    months = pd.period_range("2019-01", "2023-12", freq="M").astype(str).tolist()
+    # Build month series from actual post date range.
+    posts = df.copy()
+    posts["date"] = pd.to_datetime(
+        posts["created_utc"].astype(float), unit="s", errors="coerce"
+    )
+    valid_dates = posts["date"].dropna()
+    if valid_dates.empty:
+        months = []
+    else:
+        min_month = valid_dates.dt.to_period("M").min().strftime("%Y-%m")
+        max_month = valid_dates.dt.to_period("M").max().strftime("%Y-%m")
+        months = []
+        current = pd.Period(min_month, "M")
+        end = pd.Period(max_month, "M")
+        while current <= end:
+            months.append(str(current))
+            current += 1
 
     # For each account × month, count sync events
     cells = []

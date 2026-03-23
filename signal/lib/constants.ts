@@ -17,6 +17,7 @@ export const NAV_ITEMS = [
       { href: "/timeline",    label: "Timeline",              dot: "teal",   description: "Velocity + events" },
       { href: "/graph",       label: "Spread graph",          dot: "teal",   description: "Account network" },
       { href: "/origins",     label: "Narrative origins",     dot: "purple", description: "Who said it first" },
+      { href: "/trends",      label: "Trends",                dot: "coral",  description: "Rising narratives" },
       { href: "/globe",       label: "Globe",                 dot: "teal",   description: "Geospatial events" },
     ],
   },

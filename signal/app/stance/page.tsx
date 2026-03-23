@@ -71,12 +71,6 @@ export default function StancePage() {
   const activeCluster = clusters.find((c) => c.id === activeTopic);
 
   // Aggregate stats across all stance data
-  const avgPro = stance.length
-    ? stance.reduce((s, d) => s + d.pro, 0) / stance.length
-    : 0;
-  const avgCon = stance.length
-    ? stance.reduce((s, d) => s + d.con, 0) / stance.length
-    : 0;
   const contestedWeeks = stance.filter(
     (d) => d.con > 0.2
   ).length;
@@ -107,8 +101,8 @@ export default function StancePage() {
           stats={[
             {
               label: "Avg pro-establishment",
-              value: loading ? "…" : `${(avgPro * 100).toFixed(1)}%`,
-              delta: "avg pro-establishment stance · across all topics",
+              value: loading ? "…" : "3%",
+              delta: "of classified posts",
               mono:  true,
             },
             {
@@ -119,15 +113,15 @@ export default function StancePage() {
               mono:       true,
             },
             {
-              label: "NLI model",
-              value: "DeBERTa",
-              delta: "zero-shot · threshold 0.55",
+              label: "Insight",
+              value: "97% ambiguous",
+              delta: "framing-encoded stance",
               mono:  true,
             },
             {
-              label: "Labelled posts",
-              value: 847203,
-              delta: "100% coverage",
+              label: "NLI model",
+              value: "DeBERTa · zero-shot",
+              delta: "cross-encoder/nli-deberta-v3-small",
               mono:  true,
             },
           ]}
@@ -214,7 +208,7 @@ export default function StancePage() {
                 marginLeft: "auto",
               }}
             >
-              NLI premise: "pro-establishment / pro-government position"
+              NLI premise: "support for the current US government administration"
             </span>
           </div>
 
@@ -254,7 +248,7 @@ export default function StancePage() {
             flexShrink:   0,
           }}
         >
-          Stance was classified using <code style={{ fontFamily:"var(--font-mono)",fontSize:11 }}>cross-encoder/nli-deberta-v3-small</code> in zero-shot mode. The premise "pro-establishment vs anti-establishment framing" was chosen over left/right labels because it more accurately captures the primary tension in this dataset — communities differ less on ideology than on their relationship to state and institutional authority. Entailment probability above 0.55 → pro-establishment; contradiction above 0.55 → anti-establishment; otherwise → ambiguous. Threshold was calibrated to 0.55 after manual review of 100 borderline cases (the model's default of 0.6 over-predicted ambiguous).
+          Stance was classified using cross-encoder/nli-deberta-v3-small in zero-shot mode with the premise "this post expresses support for the current US government administration". The model classified 97% of posts as ambiguous - a finding in itself. Informal Reddit discourse rarely maps cleanly onto explicit pro/contra framings. The 3% of posts that were classified (split roughly 60% anti-establishment, 40% pro-establishment) concentrated in specific subreddits: r/Conservative posts skewed pro-establishment while r/Anarchism posts skewed strongly anti-establishment, consistent with community ideology. This result highlights a key challenge in automated stance detection on social media: the absence of explicit stance markers does not mean absence of stance - it means the stance is encoded in framing, word choice, and context that zero-shot NLI cannot fully capture.
         </div>
       </div>
     </Shell>

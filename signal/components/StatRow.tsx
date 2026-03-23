@@ -10,12 +10,12 @@ export default function StatRow({ stats }: Props) {
     <div style={{ display:"grid", gridTemplateColumns:`repeat(${stats.length},1fr)`, gap:10 }}>
       {stats.map((s) => (
         <div key={s.label} className="stat-card fade-up">
-          <div className="stat-card__label">{s.label}</div>
-          <div className="stat-card__value" style={!s.mono ? { fontFamily:"var(--font-sans)", fontSize:20 } : {}}>
+          <div className="stat-card__label" suppressHydrationWarning>{s.label}</div>
+          <div className="stat-card__value" suppressHydrationWarning style={!s.mono ? { fontFamily:"var(--font-sans)", fontSize:20 } : {}}>
             {typeof s.value === "number" ? fmtCount(s.value) : s.value}
           </div>
           {s.delta && (
-            <div className="stat-card__delta" style={s.deltaColor ? { color:s.deltaColor } : {}}>
+            <div className="stat-card__delta" suppressHydrationWarning style={s.deltaColor ? { color:s.deltaColor } : {}}>
               {s.delta}
             </div>
           )}

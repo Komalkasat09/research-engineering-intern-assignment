@@ -22,6 +22,7 @@ const NAV_SECTIONS: { title: string; items: NavItem[] }[] = [
       { href: "/timeline",    label: "Timeline",              dot: "teal" },
       { href: "/graph",       label: "Spread graph",          dot: "teal" },
       { href: "/origins",     label: "Narrative origins",     dot: "purple" },
+      { href: "/trends",      label: "Trends",                dot: "coral" },
       { href: "/globe",       label: "Globe",                 dot: "teal" },
     ],
   },

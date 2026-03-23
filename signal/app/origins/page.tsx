@@ -5,38 +5,35 @@ import Shell from "@/components/Shell";
 import StatRow from "@/components/StatRow";
 import { cleanTopicName } from "@/lib/cleanTopicName";
 
-interface OriginPost {
-  post_id?: string;
+interface SpreadEntry {
+  subreddit: string;
+  days_after: number;
+}
+
+interface PostEntry {
   author: string;
   subreddit: string;
   text: string;
   date: string;
   score: number;
+  post_id?: string;
 }
 
-interface SpreadPoint {
-  subreddit: string;
-  days_after: number;
-}
-
-interface OriginCluster {
+interface ClusterOrigin {
   topic_id: number;
   name: string;
-  color: string;
+  color?: string;
   post_count?: number;
+  origin_subreddit?: string;
   first_date?: string;
-  first_post: OriginPost;
-  origin_subreddit: string;
-  days_to_spread: number;
-  spread_to: string[];
-  spread?: SpreadPoint[];
-  spread_detail?: SpreadPoint[];
-  top_post: OriginPost;
-  earliest_posts: OriginPost[];
+  spread?: SpreadEntry[];
+  first_post?: PostEntry;
+  top_post?: PostEntry;
+  days_to_spread?: number;
 }
 
 interface OriginsResponse {
-  clusters: OriginCluster[];
+  clusters: ClusterOrigin[];
 }
 
 function fmtDate(value: string): string {
@@ -46,8 +43,12 @@ function fmtDate(value: string): string {
   return dt.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
+function cleanName(raw: string): string {
+  return cleanTopicName(raw);
+}
+
 export default function OriginsPage() {
-  const [clusters, setClusters] = useState<OriginCluster[]>([]);
+  const [clusters, setClusters] = useState<ClusterOrigin[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -65,6 +66,7 @@ export default function OriginsPage() {
         topOrigin: "—",
         avgDays: "—",
         fastest: "—",
+        slowest: "—",
       };
     }
 
@@ -79,24 +81,36 @@ export default function OriginsPage() {
       originCounts.set(key, (originCounts.get(key) ?? 0) + 1);
     }
     const topOrigin = [...originCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? "—";
+    const topOriginLabel = topOrigin !== "—" ? `r/${topOrigin.replace(/^r\//, "")}` : "—";
 
     const spreadDays = clusters
-      .map((c) => c.days_to_spread)
+      .map((c) => c.days_to_spread ?? 0)
       .filter((d) => Number.isFinite(d) && d >= 0);
 
     const avgDays = spreadDays.length
       ? (spreadDays.reduce((a, b) => a + b, 0) / spreadDays.length).toFixed(1)
       : "—";
 
-    const fastestCluster = [...clusters]
-      .filter((c) => Number.isFinite(c.days_to_spread))
-      .sort((a, b) => a.days_to_spread - b.days_to_spread)[0];
+    // Fastest = lowest lag to first cross-subreddit spread event.
+    const fastest = clusters.reduce((best, c) => {
+      const days = c.spread?.[0]?.days_after ?? 999;
+      const bestDays = best.spread?.[0]?.days_after ?? 999;
+      return days < bestDays ? c : best;
+    }, clusters[0]);
+
+    // Slowest = highest lag to first cross-subreddit spread event.
+    const slowest = clusters.reduce((worst, c) => {
+      const days = c.spread?.[0]?.days_after ?? 0;
+      const worstDays = worst.spread?.[0]?.days_after ?? 0;
+      return days > worstDays ? c : worst;
+    }, clusters[0]);
 
     return {
       earliestDate: dates[0] ? fmtDate(dates[0]) : "—",
-      topOrigin,
+      topOrigin: topOriginLabel,
       avgDays,
-      fastest: fastestCluster ? `${cleanTopicName(fastestCluster.name)} (+${fastestCluster.days_to_spread}d)` : "—",
+      fastest: fastest ? `${cleanName(fastest.name)} (+${fastest.spread?.[0]?.days_after ?? 0}d)` : "—",
+      slowest: slowest ? `${cleanName(slowest.name)} (+${slowest.spread?.[0]?.days_after ?? 0}d)` : "—",
     };
   }, [clusters]);
 
@@ -109,7 +123,7 @@ export default function OriginsPage() {
         </span>
       </div>
 
-      <div style={{ padding: "12px 24px 0" }}>
+      <div style={{ padding: "12px 24px 0" }} suppressHydrationWarning>
         <StatRow
           stats={[
             {
@@ -131,27 +145,16 @@ export default function OriginsPage() {
               mono: true,
             },
             {
-              label: "Fastest spread",
-              value: loading ? "…" : stats.fastest,
-              delta: "lowest lag narrative",
+              label: "Slowest to spread",
+              value: loading ? "…" : stats.slowest,
+              delta: "highest lag narrative",
               mono: true,
             },
           ]}
         />
       </div>
 
-      <div
-        style={{
-          flex: 1,
-          minHeight: 0,
-          margin: "12px 24px 0",
-          display: "flex",
-          flexDirection: "column",
-          gap: 10,
-          paddingBottom: 16,
-          overflowY: "auto",
-        }}
-      >
+      <div style={{ flex:1, minHeight:0, overflowY:"auto", padding:"0 24px 24px" }}>
         {loading && (
           <div className="shimmer" style={{ height: 220, borderRadius: "var(--radius-md)" }} />
         )}
@@ -164,125 +167,152 @@ export default function OriginsPage() {
           </div>
         )}
 
-        {!loading && clusters.map((cluster) => {
-          const spread = (cluster.spread ?? cluster.spread_detail ?? []).slice(0, 3);
-          const firstDate = cluster.first_date ?? cluster.first_post?.date ?? "—";
-          const showTopPost =
-            Boolean(cluster.top_post) &&
-            (
-              (cluster.top_post.post_id && cluster.top_post.post_id !== cluster.first_post?.post_id) ||
-              cluster.top_post.text !== cluster.first_post?.text ||
-              cluster.top_post.author !== cluster.first_post?.author ||
-              cluster.top_post.date !== cluster.first_post?.date
-            );
+        {clusters.map((cluster: ClusterOrigin) => (
+          <div key={cluster.topic_id} style={{
+            background:   "var(--surface)",
+            border:       "1px solid var(--border)",
+            borderRadius: "var(--radius-md)",
+            overflow:     "hidden",
+            marginBottom: 10,
+          }}>
 
-          return (
-            <div
-              key={cluster.topic_id}
-              style={{
-                background: "var(--surface)",
-                border: "1px solid var(--border)",
-                borderRadius: "var(--radius-md)",
-                overflow: "hidden",
-                marginBottom: 10,
-              }}
-            >
-              {/* Header */}
-              <div
-                style={{
-                  padding: "12px 16px",
-                  borderBottom: "1px solid var(--border)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  background: cluster.color + "0a",
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <div style={{ width: 10, height: 10, borderRadius: "50%", background: cluster.color }} />
-                  <span style={{ fontSize: 14, fontWeight: 500, color: "var(--text)" }}>
-                    {cleanTopicName(cluster.name)}
-                  </span>
-                </div>
-                <span style={{ fontSize: 11, color: "var(--dim)", fontFamily: "var(--font-mono)" }}>
-                  {cluster.post_count ?? "—"} posts
+            {/* ── Header ─────────────────────────────────── */}
+            <div style={{
+              padding:      "12px 16px",
+              borderBottom: "1px solid var(--border)",
+              display:      "flex",
+              alignItems:   "center",
+              justifyContent: "space-between",
+              background:   (cluster.color ?? "#1D9E75") + "0d",
+            }}>
+              <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                <div style={{
+                  width: 10, height: 10, borderRadius: "50%",
+                  background: cluster.color ?? "#1D9E75",
+                }} />
+                <span style={{ fontSize:14, fontWeight:500,
+                               color:"var(--text)" }}>
+                  {cleanName(cluster.name ?? "")}
                 </span>
               </div>
+              <span style={{ fontSize:11, color:"var(--dim)",
+                             fontFamily:"var(--font-mono)" }}>
+                {cluster.post_count ?? 0} posts
+              </span>
+            </div>
 
-              {/* Origin + Spread row */}
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  borderBottom: "1px solid var(--border)",
-                }}
-              >
-                <div style={{ padding: "10px 16px", borderRight: "1px solid var(--border)" }}>
-                  <div style={{ fontSize: 9, color: "var(--dim)", letterSpacing: ".1em", marginBottom: 6, fontFamily: "var(--font-mono)" }}>
-                    ORIGIN
-                  </div>
-                  <div style={{ fontSize: 13, color: cluster.color, fontFamily: "var(--font-mono)", marginBottom: 3 }}>
-                    {cluster.origin_subreddit ?? "unknown"}
-                  </div>
-                  <div style={{ fontSize: 11, color: "var(--dim)", fontFamily: "var(--font-mono)" }}>
-                    {fmtDate(firstDate)}
-                  </div>
+            {/* ── Origin + Spread ────────────────────────── */}
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              borderBottom: "1px solid var(--border)",
+            }}>
+              <div style={{ padding:"10px 16px",
+                            borderRight:"1px solid var(--border)" }}>
+                <div style={{ fontSize:9, color:"var(--dim)",
+                              letterSpacing:".1em", marginBottom:6,
+                              fontFamily:"var(--font-mono)" }}>
+                  ORIGIN
                 </div>
-
-                <div style={{ padding: "10px 16px" }}>
-                  <div style={{ fontSize: 9, color: "var(--dim)", letterSpacing: ".1em", marginBottom: 6, fontFamily: "var(--font-mono)" }}>
-                    SPREAD TO
-                  </div>
-                  {spread.map((s) => (
-                    <div key={s.subreddit} style={{ fontSize: 11, color: "var(--text-soft)", marginBottom: 2, fontFamily: "var(--font-mono)" }}>
-                      {s.subreddit}
-                      <span style={{ color: "var(--dim)", marginLeft: 6 }}>
-                        +{s.days_after}d
-                      </span>
-                    </div>
-                  ))}
-                  {spread.length === 0 && (
-                    <div style={{ fontSize: 11, color: "var(--muted)" }}>
-                      single subreddit
-                    </div>
-                  )}
+                <div style={{ fontSize:13,
+                              color: cluster.color ?? "#1D9E75",
+                              fontFamily:"var(--font-mono)",
+                              marginBottom:3 }}>
+                  {cluster.origin_subreddit
+                    ? `r/${cluster.origin_subreddit.replace(/^r\//,"")}`
+                    : "unknown"}
+                </div>
+                <div style={{ fontSize:11, color:"var(--dim)",
+                              fontFamily:"var(--font-mono)" }}>
+                  {cluster.first_date ??
+                   cluster.first_post?.date ?? "—"}
                 </div>
               </div>
-
-              {/* First post */}
-              {cluster.first_post && (
-                <div style={{ padding: "10px 16px", borderBottom: "1px solid var(--border)" }}>
-                  <div style={{ fontSize: 9, color: "var(--dim)", letterSpacing: ".1em", marginBottom: 6, fontFamily: "var(--font-mono)" }}>
-                    FIRST POST
-                  </div>
-                  <div style={{ fontSize: 12, color: "var(--text-soft)", fontFamily: "var(--font-serif)", fontStyle: "italic", lineHeight: 1.6, marginBottom: 6 }}>
-                    "{cluster.first_post.text?.slice(0, 200)}
-                    {(cluster.first_post.text?.length ?? 0) > 200 ? "…" : ""}"
-                  </div>
-                  <div style={{ fontSize: 10, color: "var(--muted)", fontFamily: "var(--font-mono)" }}>
-                    {cluster.first_post.author} · r/{cluster.first_post.subreddit} · ↑ {cluster.first_post.score} · {cluster.first_post.date}
-                  </div>
+              <div style={{ padding:"10px 16px" }}>
+                <div style={{ fontSize:9, color:"var(--dim)",
+                              letterSpacing:".1em", marginBottom:6,
+                              fontFamily:"var(--font-mono)" }}>
+                  SPREAD TO
                 </div>
-              )}
-
-              {/* Top post */}
-              {showTopPost && cluster.top_post && (
-                <div style={{ padding: "10px 16px" }}>
-                  <div style={{ fontSize: 9, color: "var(--dim)", letterSpacing: ".1em", marginBottom: 6, fontFamily: "var(--font-mono)" }}>
-                    TOP POST (highest engagement)
-                  </div>
-                  <div style={{ fontSize: 12, color: "var(--text-soft)", fontFamily: "var(--font-serif)", fontStyle: "italic", lineHeight: 1.6, marginBottom: 6 }}>
-                    "{cluster.top_post.text?.slice(0, 200)}
-                    {(cluster.top_post.text?.length ?? 0) > 200 ? "…" : ""}"
-                  </div>
-                  <div style={{ fontSize: 10, color: "var(--muted)", fontFamily: "var(--font-mono)" }}>
-                    {cluster.top_post.author} · r/{cluster.top_post.subreddit} · ↑ {cluster.top_post.score} · {cluster.top_post.date}
-                  </div>
-                </div>
-              )}
+                {(cluster.spread ?? []).length > 0
+                  ? (cluster.spread ?? []).slice(0,3).map(
+                      (s: {subreddit:string; days_after:number}) => (
+                      <div key={s.subreddit} style={{
+                        fontSize:11, color:"var(--text-soft)",
+                        marginBottom:3,
+                        fontFamily:"var(--font-mono)",
+                      }}>
+                        r/{s.subreddit.replace(/^r\//,"")}
+                        <span style={{ color:"var(--dim)",
+                                       marginLeft:6 }}>
+                          +{s.days_after}d
+                        </span>
+                      </div>
+                    ))
+                  : <div style={{ fontSize:11, color:"var(--muted)",
+                                   fontFamily:"var(--font-mono)" }}>
+                      single subreddit
+                    </div>
+                }
+              </div>
             </div>
-          );
-        })}
+
+            {/* ── First post ─────────────────────────────── */}
+            {cluster.first_post?.text && (
+              <div style={{ padding:"10px 16px",
+                            borderBottom:"1px solid var(--border)" }}>
+                <div style={{ fontSize:9, color:"var(--dim)",
+                              letterSpacing:".1em", marginBottom:6,
+                              fontFamily:"var(--font-mono)" }}>
+                  FIRST POST
+                </div>
+                <div style={{ fontSize:12, color:"var(--text-soft)",
+                              fontFamily:"var(--font-serif)",
+                              fontStyle:"italic", lineHeight:1.7,
+                              marginBottom:6 }}>
+                  "{cluster.first_post.text.slice(0, 240)}
+                  {cluster.first_post.text.length > 240 ? "…" : ""}"
+                </div>
+                <div style={{ fontSize:10, color:"var(--muted)",
+                              fontFamily:"var(--font-mono)" }}>
+                  u/{cluster.first_post.author} ·
+                  r/{(cluster.first_post.subreddit ?? "")
+                      .replace(/^r\//,"")} ·
+                  ↑ {cluster.first_post.score} ·
+                  {cluster.first_post.date}
+                </div>
+              </div>
+            )}
+
+            {/* ── Top post ───────────────────────────────── */}
+            {cluster.top_post?.text &&
+             cluster.top_post.text !== cluster.first_post?.text && (
+              <div style={{ padding:"10px 16px" }}>
+                <div style={{ fontSize:9, color:"var(--dim)",
+                              letterSpacing:".1em", marginBottom:6,
+                              fontFamily:"var(--font-mono)" }}>
+                  TOP POST (highest engagement)
+                </div>
+                <div style={{ fontSize:12, color:"var(--text-soft)",
+                              fontFamily:"var(--font-serif)",
+                              fontStyle:"italic", lineHeight:1.7,
+                              marginBottom:6 }}>
+                  "{cluster.top_post.text.slice(0, 240)}
+                  {cluster.top_post.text.length > 240 ? "…" : ""}"
+                </div>
+                <div style={{ fontSize:10, color:"var(--muted)",
+                              fontFamily:"var(--font-mono)" }}>
+                  u/{cluster.top_post.author} ·
+                  r/{(cluster.top_post.subreddit ?? "")
+                      .replace(/^r\//,"")} ·
+                  ↑ {cluster.top_post.score} ·
+                  {cluster.top_post.date}
+                </div>
+              </div>
+            )}
+
+          </div>
+        ))}
       </div>
     </Shell>
   );

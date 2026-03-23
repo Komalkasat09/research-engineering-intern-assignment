@@ -35,7 +35,7 @@ from tqdm import tqdm
 
 
 MODEL_ID  = "cross-encoder/nli-deberta-v3-small"
-PREMISE   = "This post expresses a pro-establishment or pro-government political position"
+PREMISE   = "This post expresses support for the current US government administration and its policies"
 THRESHOLD = 0.55
 
 

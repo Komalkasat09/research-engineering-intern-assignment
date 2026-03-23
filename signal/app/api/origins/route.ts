@@ -33,10 +33,12 @@ interface OriginCluster {
   topic_id: number;
   name: string;
   color: string;
+  post_count: number;
   first_post: OriginPost;
   origin_subreddit: string;
   days_to_spread: number;
   spread_to: string[];
+  spread: SpreadPoint[];
   spread_detail: SpreadPoint[];
   top_post: OriginPost;
   earliest_posts: OriginPost[];
@@ -89,10 +91,12 @@ function loadTopicMeta(): Map<number, { name: string; color: string }> {
 function buildClustersFromMeta(posts: MetaPost[]): OriginCluster[] {
   const topicMeta = loadTopicMeta();
   const byTopic = new Map<number, MetaPost[]>();
+  const topicCounts: Record<number, number> = {};
 
   for (const p of posts) {
     const tid = Number(p.topic_id);
     if (!Number.isFinite(tid) || tid < 0) continue;
+    topicCounts[tid] = (topicCounts[tid] ?? 0) + 1;
     if (!p.created_utc || !p.subreddit) continue;
 
     if (!byTopic.has(tid)) byTopic.set(tid, []);
@@ -140,10 +144,12 @@ function buildClustersFromMeta(posts: MetaPost[]): OriginCluster[] {
       topic_id: topicId,
       name: topic?.name ?? `topic ${topicId}`,
       color: topic?.color ?? TOPIC_COLORS[topicId] ?? "#3A4148",
+      post_count: topicCounts[topicId] ?? 0,
       first_post: firstPost,
       origin_subreddit: originSubreddit,
       days_to_spread: daysToSpread,
       spread_to: spreadTo,
+      spread: spreadDetail,
       spread_detail: spreadDetail,
       top_post: toOriginPost(top),
       earliest_posts: sorted.slice(0, 5).map(toOriginPost),
@@ -159,6 +165,7 @@ function getSyntheticClusters(): OriginCluster[] {
       topic_id: 3,
       name: "Musk / DOGE",
       color: "#D85A30",
+      post_count: 509,
       first_post: {
         author: "u/fedwatchdog",
         subreddit: "r/politics",
@@ -170,6 +177,11 @@ function getSyntheticClusters(): OriginCluster[] {
       origin_subreddit: "r/politics",
       days_to_spread: 2,
       spread_to: ["r/democrats", "r/neoliberal", "r/Conservative"],
+      spread: [
+        { subreddit: "r/democrats", days_after: 2 },
+        { subreddit: "r/neoliberal", days_after: 4 },
+        { subreddit: "r/Conservative", days_after: 7 },
+      ],
       spread_detail: [
         { subreddit: "r/democrats", days_after: 2 },
         { subreddit: "r/neoliberal", days_after: 4 },
@@ -189,6 +201,7 @@ function getSyntheticClusters(): OriginCluster[] {
       topic_id: 5,
       name: "immigration / ICE",
       color: "#D4537E",
+      post_count: 294,
       first_post: {
         author: "u/borderbriefing",
         subreddit: "r/Conservative",
@@ -200,6 +213,11 @@ function getSyntheticClusters(): OriginCluster[] {
       origin_subreddit: "r/Conservative",
       days_to_spread: 1,
       spread_to: ["r/politics", "r/Anarchism", "r/democrats"],
+      spread: [
+        { subreddit: "r/politics", days_after: 1 },
+        { subreddit: "r/Anarchism", days_after: 3 },
+        { subreddit: "r/democrats", days_after: 5 },
+      ],
       spread_detail: [
         { subreddit: "r/politics", days_after: 1 },
         { subreddit: "r/Anarchism", days_after: 3 },
@@ -219,6 +237,7 @@ function getSyntheticClusters(): OriginCluster[] {
       topic_id: 1,
       name: "anarchist / socialist",
       color: "#7F77DD",
+      post_count: 716,
       first_post: {
         author: "u/communalmutualaid",
         subreddit: "r/Anarchism",
@@ -230,6 +249,10 @@ function getSyntheticClusters(): OriginCluster[] {
       origin_subreddit: "r/Anarchism",
       days_to_spread: 4,
       spread_to: ["r/politics", "r/neoliberal"],
+      spread: [
+        { subreddit: "r/politics", days_after: 4 },
+        { subreddit: "r/neoliberal", days_after: 9 },
+      ],
       spread_detail: [
         { subreddit: "r/politics", days_after: 4 },
         { subreddit: "r/neoliberal", days_after: 9 },

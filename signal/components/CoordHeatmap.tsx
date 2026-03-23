@@ -78,7 +78,7 @@ const CELL_GAP   = 2;
 const ROW_LABEL_W = 130;
 const COL_LABEL_H = 28;
 const MIN_CELL_W  = 8;
-const MIN_CELL_H  = 14;
+const MIN_CELL_H  = 16;
 
 // ── Canvas renderer ───────────────────────────────────────────────────────────
 
@@ -97,8 +97,20 @@ export default function CoordHeatmap({ data, width, height }: Props) {
     const gridW  = width - ROW_LABEL_W - 16;
     const gridH  = height - COL_LABEL_H - 16;
 
-    const cellW  = Math.max(MIN_CELL_W, Math.floor((gridW - (numCols - 1) * CELL_GAP) / numCols));
-    const cellH  = Math.max(MIN_CELL_H, Math.floor((gridH - (numRows - 1) * CELL_GAP) / numRows));
+    const cellW = Math.max(
+      MIN_CELL_W,
+      Math.min(
+        40,
+        Math.floor((gridW - (numCols - 1) * CELL_GAP) / numCols)
+      )
+    );
+    const cellH = Math.max(
+      MIN_CELL_H,
+      Math.min(
+        60,
+        Math.floor((gridH - (numRows - 1) * CELL_GAP) / numRows)
+      )
+    );
 
     // Build lookup: account+month → count
     const cellMap = new Map<string, number>();
@@ -116,12 +128,20 @@ export default function CoordHeatmap({ data, width, height }: Props) {
   const draw = useCallback(() => {
     if (!canvasRef.current || !data || !layout) return;
 
-    const ctx = canvasRef.current.getContext("2d");
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const dpr = window.devicePixelRatio || 1;
-    canvasRef.current.width  = width  * dpr;
-    canvasRef.current.height = height * dpr;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    // Always reset canvas dimensions completely
+    canvas.width  = Math.floor(width  * dpr);
+    canvas.height = Math.floor(height * dpr);
+    canvas.style.width  = width  + "px";
+    canvas.style.height = height + "px";
+
+    // Reset transform before scaling
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.scale(dpr, dpr);
 
     // Clear
@@ -281,13 +301,13 @@ export default function CoordHeatmap({ data, width, height }: Props) {
   }
 
   return (
-    <div style={{ position: "relative", width, height: "100%" }}>
+    <div style={{ position: "relative", width: "100%", height: "100%" }}>
       {/* Canvas heatmap */}
       <canvas
         ref={canvasRef}
         style={{
-          width,
-          height:  height - (selected ? 120 : 0),
+          width:   "100%",
+          height:  "100%",
           cursor:  "crosshair",
           display: "block",
         }}
