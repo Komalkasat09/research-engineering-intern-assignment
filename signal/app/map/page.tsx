@@ -35,6 +35,11 @@ import { cleanTopicName } from "@/lib/cleanTopicName";
 import { useSignalStore } from "@/lib/store";
 import type { TopicCluster } from "@/types";
 
+interface CoordSummary {
+  accounts?: string[];
+  top_pairs?: Array<unknown>;
+}
+
 // ── Dynamic imports (SSR disabled — both require browser APIs) ───────────────
 
 const NarrativeCanvas = dynamic(
@@ -108,6 +113,8 @@ export default function MapPage() {
   const [clusters, setClusters] = useState<TopicCluster[]>([]);
   const [clusterError, setClusterError] = useState<string | null>(null);
   const [topicQuery, setTopicQuery] = useState("");
+  const [coordAccounts, setCoordAccounts] = useState<number | null>(null);
+  const [coordPairs, setCoordPairs] = useState<number | null>(null);
 
   // Load cluster metadata
   useEffect(() => {
@@ -120,6 +127,22 @@ export default function MapPage() {
       .catch((err) => {
         console.error("[/map] clusters fetch:", err);
         setClusterError("Failed to load cluster data");
+      });
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/coord")
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
+      .then((data: CoordSummary) => {
+        setCoordAccounts(Array.isArray(data.accounts) ? data.accounts.length : 0);
+        setCoordPairs(Array.isArray(data.top_pairs) ? data.top_pairs.length : 0);
+      })
+      .catch(() => {
+        setCoordAccounts(null);
+        setCoordPairs(null);
       });
   }, []);
 
@@ -206,8 +229,8 @@ export default function MapPage() {
             },
             {
               label:      "Coord. accounts",
-              value:      "218",
-              delta:      "flagged this week",
+              value:      coordAccounts === null ? "—" : String(coordAccounts),
+              delta:      coordPairs === null ? "from coordination scan" : `${coordPairs} flagged pairs`,
               deltaColor: "var(--coral)",
               mono:       true,
             },

@@ -450,7 +450,7 @@ export default function LandingPage() {
         {/* CTAs */}
         <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap", marginBottom: 56 }}>
           <button
-            onClick={() => router.push("/map")}
+            onClick={() => router.push("/explore")}
             style={{
               padding:      "12px 26px",
               background:   "rgba(29,158,117,0.15)",
