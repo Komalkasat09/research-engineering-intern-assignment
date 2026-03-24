@@ -5,6 +5,33 @@ import fs from "fs";
 import { allowSyntheticData, missingDataResponse } from "@/lib/dataMode";
 export const dynamic = "force-static";
 
+function clamp01(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(0, Math.min(1, value));
+}
+
+function confidenceLabel(score: number): "high" | "medium" | "low" {
+  if (score >= 0.72) return "high";
+  if (score >= 0.45) return "medium";
+  return "low";
+}
+
+function enrichCoord<T extends { top_pairs?: Array<{ sync_count?: number; avg_gap_min?: number; shared_urls?: string[] }> }>(data: T): T {
+  const pairs = (data.top_pairs ?? []).map((p) => {
+    const syncSignal = clamp01((Number(p.sync_count ?? 0) - 3) / 12);
+    const timingSignal = clamp01(1 - (Number(p.avg_gap_min ?? 30) / 30));
+    const urlSignal = clamp01((p.shared_urls?.length ?? 0) / 6);
+    const score = clamp01((syncSignal * 0.5) + (timingSignal * 0.3) + (urlSignal * 0.2));
+    return {
+      ...p,
+      confidence_score: Number(score.toFixed(3)),
+      confidence_label: confidenceLabel(score),
+    };
+  });
+
+  return { ...data, top_pairs: pairs };
+}
+
 function synth() {
   const accounts=["u/xr_organiser","u/collapsemod","u/greenpost_bot","u/eco_amplify","u/climate_bridge","u/coordpost1","u/coordpost2","u/newsbot_climate","u/xr_media","u/activist_net","u/collapse_daily","u/green_signal","u/cop_tracker","u/ipcc_news","u/climate_alert","u/earth_watch","u/future_earth","u/signal_boost","u/narrative_hub","u/action_net"];
   const months:string[]=[];
@@ -34,9 +61,9 @@ function synth() {
 
 export async function GET() {
   const fp=path.join(process.cwd(),"public","data","coord.json");
-  if(fs.existsSync(fp))return NextResponse.json(JSON.parse(fs.readFileSync(fp,"utf-8")));
+  if(fs.existsSync(fp))return NextResponse.json(enrichCoord(JSON.parse(fs.readFileSync(fp,"utf-8"))));
   if (!allowSyntheticData()) {
     return missingDataResponse("/api/coord", ["public/data/coord.json"]);
   }
-  return NextResponse.json(synth());
+  return NextResponse.json(enrichCoord(synth()));
 }

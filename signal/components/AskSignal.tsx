@@ -180,6 +180,7 @@ export default function AskSignal({ initialMessage }: Props) {
   const [messages,    setMessages]    = useState<Message[]>([]);
   const [input,       setInput]       = useState("");
   const [isLoading,   setIsLoading]   = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [error,       setError]       = useState<string | null>(null);
 
   useEffect(() => {
@@ -244,7 +245,55 @@ export default function AskSignal({ initialMessage }: Props) {
     } finally {
       setIsLoading(false);
     }
-  }, [messages, activeTopic, isLoading]);
+  }, [messages, activeTopic, investigationContext, isLoading]);
+
+  async function exportEvidenceNotebook() {
+    if (!messages.length || isExporting) return;
+    setError(null);
+    setIsExporting(true);
+
+    try {
+      const title = investigationContext?.narrativeName
+        ? `Signal Evidence Notebook - ${investigationContext.narrativeName}`
+        : "Signal Evidence Notebook";
+
+      const res = await fetch("/api/report/evidence", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title,
+          messages: messages.map((m) => ({ role: m.role, content: m.content })),
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? `HTTP ${res.status}`);
+      }
+
+      const payload = (await res.json()) as { title?: string; markdown?: string };
+      const markdown = payload.markdown ?? "";
+      const filename = (payload.title ?? title)
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "") || "signal-evidence-notebook";
+
+      const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${filename}.md`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Evidence export failed";
+      setError(msg);
+    } finally {
+      setIsExporting(false);
+    }
+  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -356,9 +405,26 @@ export default function AskSignal({ initialMessage }: Props) {
           </button>
         </form>
 
-        <div style={{ marginTop: 6, fontSize: 10, color: "#2A3340", fontFamily: "var(--font-mono)" }}>
+        <div style={{ marginTop: 8, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+          <div style={{ fontSize: 10, color: "#2A3340", fontFamily: "var(--font-mono)" }}>
           enter to send · shift+enter for new line ·{" "}
           {activeTopic !== null ? `scoped to topic #${activeTopic}` : "all topics · select a cluster to scope retrieval"}
+          </div>
+          <button
+            type="button"
+            onClick={exportEvidenceNotebook}
+            disabled={messages.length === 0 || isExporting}
+            className="chip"
+            style={{
+              border: "1px solid #1E2530",
+              background: "transparent",
+              color: messages.length === 0 || isExporting ? "#3A4148" : "#8A9BB0",
+              cursor: messages.length === 0 || isExporting ? "not-allowed" : "pointer",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {isExporting ? "Exporting…" : "Export evidence"}
+          </button>
         </div>
       </div>
 

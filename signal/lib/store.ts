@@ -36,6 +36,12 @@ interface SignalStore {
   investigationContext: InvestigationContext | null;
   setInvestigationContext: (context: InvestigationContext | null) => void;
   clearInvestigationContext: () => void;
+  analystRailOpen: boolean;
+  setAnalystRailOpen: (open: boolean) => void;
+  toggleAnalystRail: () => void;
+  opsTheme: boolean;
+  setOpsTheme: (enabled: boolean) => void;
+  toggleOpsTheme: () => void;
   meta:           DatasetMeta | null;
   setMeta:        (meta: DatasetMeta) => void;
 }
@@ -68,6 +74,12 @@ export const useSignalStore = create<SignalStore>()(
       investigationContext: null,
       setInvestigationContext: (context) => set({ investigationContext: context }),
       clearInvestigationContext: () => set({ investigationContext: null }),
+      analystRailOpen: true,
+      setAnalystRailOpen: (open) => set({ analystRailOpen: open }),
+      toggleAnalystRail: () => set((state) => ({ analystRailOpen: !state.analystRailOpen })),
+      opsTheme: false,
+      setOpsTheme: (enabled) => set({ opsTheme: enabled }),
+      toggleOpsTheme: () => set((state) => ({ opsTheme: !state.opsTheme })),
       meta:           null,
       setMeta:        (meta) => set({ meta }),
     }),
@@ -82,6 +94,8 @@ export const useSignalStore = create<SignalStore>()(
         platforms: state.platforms,
         selectedNode: state.selectedNode,
         investigationContext: state.investigationContext,
+        analystRailOpen: state.analystRailOpen,
+        opsTheme: state.opsTheme,
       }),
     }
   )

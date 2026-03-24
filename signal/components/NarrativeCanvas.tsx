@@ -57,9 +57,16 @@ interface TooltipState {
 // so we tint the sprites at runtime instead of making per-color textures.
 
 function makeCircleTexture(app: PIXI.Application, radius: number): PIXI.Texture {
-  const g = new PIXI.Graphics();
-  g.circle(radius, radius, radius).fill(0xffffff);
-  return app.renderer.generateTexture(g);
+  try {
+    if (!app.renderer || typeof app.renderer.generateTexture !== "function") {
+      return PIXI.Texture.WHITE;
+    }
+    const g = new PIXI.Graphics();
+    g.circle(radius, radius, radius).fill(0xffffff);
+    return app.renderer.generateTexture(g);
+  } catch {
+    return PIXI.Texture.WHITE;
+  }
 }
 
 // ── Hex color → PIXI tint integer ────────────────────────────────────────────
@@ -376,6 +383,8 @@ export default function NarrativeCanvas({ width, height }: NarrativeCanvasProps)
 
       try {
         const data = await fetchMapData(width, height);
+        if (isDisposed || !app.renderer) return;
+
         setMeta(data.meta);
         clustersRef.current = data.clusters;
         pointsRef.current   = data.points;
@@ -393,13 +402,20 @@ export default function NarrativeCanvas({ width, height }: NarrativeCanvasProps)
         const sprites: PIXI.Sprite[] = [];
 
         for (const point of data.points) {
+          if (isDisposed) break;
           const sprite  = new PIXI.Sprite(tex);
           sprite.tint   = hexToInt(topicColor(point.topicId));
           sprite.alpha  = POINT_ALPHA;
           sprite.x      = point.x - POINT_RADIUS;
           sprite.y      = point.y - POINT_RADIUS;
           const sz = 1 + Math.sqrt(Math.min(point.score, 5000)) * 0.004;
-          sprite.scale.set(sz);
+          if (tex === PIXI.Texture.WHITE) {
+            const size = Math.max(2, POINT_RADIUS * 2 * sz);
+            sprite.width = size;
+            sprite.height = size;
+          } else {
+            sprite.scale.set(sz);
+          }
           const particleContainer = pc as unknown as {
             addParticle?: (child: PIXI.Sprite) => void;
             addChild?: (child: PIXI.Sprite) => void;
@@ -415,7 +431,7 @@ export default function NarrativeCanvas({ width, height }: NarrativeCanvasProps)
 
         spritesRef.current = sprites;
         applyAlpha(activeTopicRef.current);
-        buildLabels(data.clusters, data);
+        if (!isDisposed) buildLabels(data.clusters, data);
         setLoading(false);
       } catch (err) {
         console.error("[NarrativeCanvas]", err);
@@ -505,12 +521,30 @@ export default function NarrativeCanvas({ width, height }: NarrativeCanvasProps)
             display:        "flex",
             alignItems:     "center",
             justifyContent: "center",
-            color:          "#E24B4A",
-            fontSize:       13,
-            fontFamily:     "var(--font-mono)",
+            background:     "radial-gradient(1200px 320px at 50% 10%, rgba(216,90,48,0.08), transparent 50%), #0A0C0E",
+            padding:        16,
           }}
         >
-          {error}
+          <div
+            style={{
+              border: "1px solid rgba(216,90,48,0.35)",
+              background: "rgba(17,20,24,0.85)",
+              borderRadius: 10,
+              padding: "12px 14px",
+              maxWidth: 520,
+              width: "100%",
+            }}
+          >
+            <div style={{ color: "#E24B4A", fontSize: 11, fontFamily: "var(--font-mono)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>
+              Map renderer error
+            </div>
+            <div style={{ color: "#C8D3E0", fontSize: 12, lineHeight: 1.6, fontFamily: "var(--font-sans)" }}>
+              The canvas failed to initialize. Try reloading this page. If the issue persists, use the legend below to continue filtering narratives while the renderer recovers.
+            </div>
+            <div style={{ color: "#8A9BB0", fontSize: 10, fontFamily: "var(--font-mono)", marginTop: 8 }}>
+              detail: {error}
+            </div>
+          </div>
         </div>
       )}
 

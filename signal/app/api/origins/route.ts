@@ -40,8 +40,31 @@ interface OriginCluster {
   spread_to: string[];
   spread: SpreadPoint[];
   spread_detail: SpreadPoint[];
+  largest_subreddit: string;
+  time_to_mainstream_days: number;
+  mainstream_tier: "instant" | "quick" | "gradual" | "niche";
   top_post: OriginPost;
   earliest_posts: OriginPost[];
+  confidence_score?: number;
+  confidence_label?: "high" | "medium" | "low";
+}
+
+function mainstreamTier(days: number): "instant" | "quick" | "gradual" | "niche" {
+  if (days <= 2) return "instant";
+  if (days <= 7) return "quick";
+  if (days <= 30) return "gradual";
+  return "niche";
+}
+
+function confidenceLabel(score: number): "high" | "medium" | "low" {
+  if (score >= 0.72) return "high";
+  if (score >= 0.45) return "medium";
+  return "low";
+}
+
+function clamp01(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(0, Math.min(1, value));
 }
 
 function clampText(value: string | undefined): string {
@@ -123,8 +146,18 @@ function buildClustersFromMeta(posts: MetaPost[]): OriginCluster[] {
       (a, b) => (a[1].created_utc ?? 0) - (b[1].created_utc ?? 0)
     );
 
+    const subredditCounts = new Map<string, number>();
+    for (const post of sorted) {
+      const sub = post.subreddit ?? "r/unknown";
+      subredditCounts.set(sub, (subredditCounts.get(sub) ?? 0) + 1);
+    }
+
     const originSubreddit = spreadOrder[0]?.[0] ?? firstPost.subreddit;
     const originTs = spreadOrder[0]?.[1].created_utc ?? first.created_utc ?? 0;
+    const largestSubreddit = [...subredditCounts.entries()]
+      .sort((a, b) => b[1] - a[1])[0]?.[0] ?? originSubreddit;
+    const largestSubFirstTs = firstBySub.get(largestSubreddit)?.created_utc ?? originTs;
+    const timeToMainstreamDays = Math.max(0, Math.floor((largestSubFirstTs - originTs) / 86400));
 
     const spreadDetail: SpreadPoint[] = spreadOrder
       .slice(1)
@@ -136,6 +169,10 @@ function buildClustersFromMeta(posts: MetaPost[]): OriginCluster[] {
 
     const daysToSpread = spreadDetail.length ? spreadDetail[0].days_after : 0;
     const spreadTo = spreadDetail.map((s) => s.subreddit);
+    const postSignal = clamp01(Math.log10(Math.max(topicCounts[topicId] ?? 1, 1)) / 3);
+    const spreadSignal = clamp01(spreadTo.length / 8);
+    const speedSignal = spreadDetail.length ? clamp01(1 - ((daysToSpread ?? 0) / 21)) : 0.2;
+    const confidenceScore = clamp01((postSignal * 0.35) + (spreadSignal * 0.35) + (speedSignal * 0.3));
 
     const top = [...clusterPosts].sort((a, b) => (b.score ?? 0) - (a.score ?? 0))[0];
 
@@ -151,8 +188,13 @@ function buildClustersFromMeta(posts: MetaPost[]): OriginCluster[] {
       spread_to: spreadTo,
       spread: spreadDetail,
       spread_detail: spreadDetail,
+      largest_subreddit: largestSubreddit,
+      time_to_mainstream_days: timeToMainstreamDays,
+      mainstream_tier: mainstreamTier(timeToMainstreamDays),
       top_post: toOriginPost(top),
       earliest_posts: sorted.slice(0, 5).map(toOriginPost),
+      confidence_score: Number(confidenceScore.toFixed(3)),
+      confidence_label: confidenceLabel(confidenceScore),
     });
   }
 
@@ -187,6 +229,9 @@ function getSyntheticClusters(): OriginCluster[] {
         { subreddit: "r/neoliberal", days_after: 4 },
         { subreddit: "r/Conservative", days_after: 7 },
       ],
+      largest_subreddit: "r/democrats",
+      time_to_mainstream_days: 2,
+      mainstream_tier: "instant",
       top_post: {
         author: "u/appropriationsnerd",
         subreddit: "r/democrats",
@@ -223,6 +268,9 @@ function getSyntheticClusters(): OriginCluster[] {
         { subreddit: "r/Anarchism", days_after: 3 },
         { subreddit: "r/democrats", days_after: 5 },
       ],
+      largest_subreddit: "r/politics",
+      time_to_mainstream_days: 1,
+      mainstream_tier: "instant",
       top_post: {
         author: "u/civilrightsdesk",
         subreddit: "r/politics",
@@ -257,6 +305,9 @@ function getSyntheticClusters(): OriginCluster[] {
         { subreddit: "r/politics", days_after: 4 },
         { subreddit: "r/neoliberal", days_after: 9 },
       ],
+      largest_subreddit: "r/politics",
+      time_to_mainstream_days: 4,
+      mainstream_tier: "quick",
       top_post: {
         author: "u/agencyandpower",
         subreddit: "r/Anarchism",
@@ -267,8 +318,9 @@ function getSyntheticClusters(): OriginCluster[] {
       },
       earliest_posts: [],
     },
-  ].map((c) => ({
+  ].map((c): OriginCluster => ({
     ...c,
+    mainstream_tier: c.mainstream_tier as "instant" | "quick" | "gradual" | "niche",
     earliest_posts: c.earliest_posts.length ? c.earliest_posts : [c.first_post, c.top_post],
   }));
 }

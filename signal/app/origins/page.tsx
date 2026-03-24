@@ -30,6 +30,11 @@ interface ClusterOrigin {
   first_post?: PostEntry;
   top_post?: PostEntry;
   days_to_spread?: number;
+  largest_subreddit?: string;
+  time_to_mainstream_days?: number;
+  mainstream_tier?: "instant" | "quick" | "gradual" | "niche";
+  confidence_score?: number;
+  confidence_label?: "high" | "medium" | "low";
 }
 
 interface OriginsResponse {
@@ -45,6 +50,12 @@ function fmtDate(value: string): string {
 
 function cleanName(raw: string): string {
   return cleanTopicName(raw);
+}
+
+function confidenceColor(label: ClusterOrigin["confidence_label"]): string {
+  if (label === "high") return "var(--teal)";
+  if (label === "medium") return "var(--amber)";
+  return "var(--coral)";
 }
 
 export default function OriginsPage() {
@@ -201,6 +212,32 @@ export default function OriginsPage() {
               </span>
             </div>
 
+            <div style={{
+              padding: "6px 16px",
+              borderBottom: "1px solid var(--border)",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              background: "#0D1117",
+            }}>
+              <span style={{ fontSize: 9, color: "var(--muted)", fontFamily: "var(--font-mono)", letterSpacing: ".08em", textTransform: "uppercase" }}>
+                evidence confidence
+              </span>
+              <span style={{
+                fontSize: 10,
+                color: confidenceColor(cluster.confidence_label),
+                border: `1px solid ${confidenceColor(cluster.confidence_label)}44`,
+                background: `${confidenceColor(cluster.confidence_label)}14`,
+                borderRadius: 16,
+                padding: "2px 7px",
+                fontFamily: "var(--font-mono)",
+                textTransform: "uppercase",
+                letterSpacing: ".05em",
+              }}>
+                {cluster.confidence_label ?? "low"} ({(cluster.confidence_score ?? 0).toFixed(2)})
+              </span>
+            </div>
+
             {/* ── Origin + Spread ────────────────────────── */}
             <div style={{
               display: "grid",
@@ -254,6 +291,11 @@ export default function OriginsPage() {
                       single subreddit
                     </div>
                 }
+
+                <div style={{ marginTop: 8, fontSize: 10, color: "var(--dim)", fontFamily: "var(--font-mono)" }}>
+                  mainstream: r/{(cluster.largest_subreddit ?? "unknown").replace(/^r\//, "")} ·
+                  {" "}TTM {cluster.time_to_mainstream_days ?? 0}d · {cluster.mainstream_tier ?? "niche"}
+                </div>
               </div>
             </div>
 

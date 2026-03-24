@@ -44,7 +44,15 @@ interface HeatmapData {
   top_pairs: {
     account_a: string; account_b: string; sync_count: number;
     avg_gap_min: number; shared_urls: string[];
+    confidence_score?: number;
+    confidence_label?: "high" | "medium" | "low";
   }[];
+}
+
+function confidenceColor(label: "high" | "medium" | "low" | undefined): string {
+  if (label === "high") return "var(--teal)";
+  if (label === "medium") return "var(--amber)";
+  return "var(--coral)";
 }
 
 export default function SignalsPage() {
@@ -54,6 +62,7 @@ export default function SignalsPage() {
   const [dims, setDims]     = useState({ w: 0, h: 0 });
   const [data, setData]     = useState<HeatmapData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mode, setMode] = useState<"raw" | "activity-adjusted">("raw");
 
   useEffect(() => {
     fetch("/api/coord")
@@ -134,6 +143,26 @@ export default function SignalsPage() {
         accounts responding to the same breaking news, and mutual friends sharing viral links simultaneously.
       </div>
 
+      <div style={{ margin: "8px 24px 0", display: "flex", gap: 6, alignItems: "center" }}>
+        <span style={{ fontSize: 10, color: "var(--dim)", fontFamily: "var(--font-mono)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+          normalization
+        </span>
+        <button
+          className={`chip ${mode === "raw" ? "active" : ""}`}
+          onClick={() => setMode("raw")}
+          style={{ border: "none", background: "transparent" }}
+        >
+          Raw counts
+        </button>
+        <button
+          className={`chip ${mode === "activity-adjusted" ? "active" : ""}`}
+          onClick={() => setMode("activity-adjusted")}
+          style={{ border: "none", background: "transparent" }}
+        >
+          Activity-adjusted
+        </button>
+      </div>
+
       <div
         style={{
           flex:          1,
@@ -164,7 +193,7 @@ export default function SignalsPage() {
             >
               {loading
                 ? "loading…"
-                : `${data?.accounts.length ?? 0} accounts · ${data?.months.length ?? 0} months · click row to inspect`}
+                : `${data?.accounts.length ?? 0} accounts · ${data?.months.length ?? 0} months · ${mode} · click row to inspect`}
             </span>
           </div>
 
@@ -174,6 +203,7 @@ export default function SignalsPage() {
                 data={data}
                 width={dims.w}
                 height={dims.h}
+                mode={mode}
               />
             )}
             {loading && (
@@ -220,7 +250,7 @@ export default function SignalsPage() {
                       textAlign:    "left",
                     }}
                   >
-                    {["account_a", "account_b", "sync count", "avg gap", "shared URLs"].map((h) => (
+                    {["account_a", "account_b", "sync count", "avg gap", "confidence", "shared URLs"].map((h) => (
                       <th
                         key={h}
                         style={{
@@ -249,6 +279,20 @@ export default function SignalsPage() {
                         {pair.sync_count}×
                       </td>
                       <td style={{ padding: "6px 14px" }}>{pair.avg_gap_min.toFixed(1)} min</td>
+                      <td style={{ padding: "6px 14px" }}>
+                        <span style={{
+                          fontSize: 10,
+                          color: confidenceColor(pair.confidence_label),
+                          border: `1px solid ${confidenceColor(pair.confidence_label)}44`,
+                          background: `${confidenceColor(pair.confidence_label)}14`,
+                          borderRadius: 16,
+                          padding: "1px 6px",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.05em",
+                        }}>
+                          {pair.confidence_label ?? "low"}
+                        </span>
+                      </td>
                       <td style={{ padding: "6px 14px", color: "var(--dim)" }}>
                         {pair.shared_urls.slice(0, 2).map((url) => (
                           <div key={url} style={{ maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>

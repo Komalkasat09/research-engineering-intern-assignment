@@ -22,6 +22,14 @@ interface TrendNarrative {
   };
   origin_subreddit: string;
   peak_week: string;
+  confidence_score: number;
+  confidence_label: "high" | "medium" | "low";
+  rank_reason: {
+    score: number;
+    velocity_spike: number;
+    spread_count: number;
+    post_count: number;
+  };
 }
 
 interface AmplifiedAccount {
@@ -43,15 +51,43 @@ interface TrendsResponse {
   };
 }
 
+interface NarrativeDiffRow {
+  topic_id: number;
+  added?: Array<{ term: string; count: number }>;
+  dropped?: Array<{ term: string; count: number }>;
+}
+
+interface AlertRow {
+  topic_id?: number;
+  severity?: "high" | "medium" | "low";
+  score?: number;
+  reason?: string;
+}
+
+interface CounterfactualRow {
+  topic_id: number;
+  top_account: string;
+  impact_pct: number;
+}
+
 function velocityBadge(change: number): string {
   const sign = change >= 0 ? "+" : "";
   return `↑ ${sign}${change.toFixed(0)}% velocity`;
+}
+
+function confidenceColor(label: TrendNarrative["confidence_label"]): string {
+  if (label === "high") return "var(--teal)";
+  if (label === "medium") return "var(--amber)";
+  return "var(--coral)";
 }
 
 export default function TrendsPage() {
   const router = useRouter();
   const { setActiveTopic, setInvestigationContext } = useSignalStore();
   const [data, setData] = useState<TrendsResponse | null>(null);
+  const [diffs, setDiffs] = useState<NarrativeDiffRow[]>([]);
+  const [alerts, setAlerts] = useState<AlertRow[]>([]);
+  const [counterfactual, setCounterfactual] = useState<CounterfactualRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -60,6 +96,23 @@ export default function TrendsPage() {
       .then((d: TrendsResponse) => setData(d))
       .catch(console.error)
       .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/narrative-diff")
+      .then((r) => r.json())
+      .then((d) => setDiffs((d.diffs ?? []) as NarrativeDiffRow[]))
+      .catch(() => setDiffs([]));
+
+    fetch("/api/alerts")
+      .then((r) => r.json())
+      .then((d) => setAlerts((d.alerts ?? []) as AlertRow[]))
+      .catch(() => setAlerts([]));
+
+    fetch("/api/counterfactual")
+      .then((r) => r.json())
+      .then((d) => setCounterfactual((d.topics ?? []) as CounterfactualRow[]))
+      .catch(() => setCounterfactual([]));
   }, []);
 
   const maxSpike = useMemo(() => {
@@ -189,6 +242,22 @@ export default function TrendsPage() {
                     </span>
                     <span
                       style={{
+                        fontSize: 10,
+                        color: confidenceColor(narrative.confidence_label),
+                        fontFamily: "var(--font-mono)",
+                        border: `1px solid ${confidenceColor(narrative.confidence_label)}44`,
+                        background: `${confidenceColor(narrative.confidence_label)}14`,
+                        borderRadius: 20,
+                        padding: "2px 8px",
+                        marginLeft: 8,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.04em",
+                      }}
+                    >
+                      {narrative.confidence_label} confidence
+                    </span>
+                    <span
+                      style={{
                         marginLeft: "auto",
                         fontSize: 10,
                         color: "var(--coral)",
@@ -214,6 +283,31 @@ export default function TrendsPage() {
                       }}
                     >
                       {narrative.post_count.toLocaleString()} posts · {narrative.origin_subreddit} · peak {narrative.peak_week}
+                    </div>
+
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
+                        gap: 6,
+                        marginBottom: 8,
+                      }}
+                    >
+                      {[
+                        { label: "score", value: `↑ ${narrative.rank_reason.score.toLocaleString()}` },
+                        { label: "velocity", value: narrative.rank_reason.velocity_spike.toFixed(3) },
+                        { label: "spread", value: `${narrative.rank_reason.spread_count} subs` },
+                        { label: "post_count", value: narrative.rank_reason.post_count.toLocaleString() },
+                      ].map((metric) => (
+                        <div key={metric.label} style={{ border: "1px solid var(--border)", borderRadius: 6, padding: "5px 7px", background: "#0D1117" }}>
+                          <div style={{ fontSize: 9, color: "var(--muted)", fontFamily: "var(--font-mono)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                            {metric.label}
+                          </div>
+                          <div style={{ fontSize: 11, color: "var(--text-soft)", fontFamily: "var(--font-mono)", marginTop: 1 }}>
+                            {metric.value}
+                          </div>
+                        </div>
+                      ))}
                     </div>
 
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
@@ -372,6 +466,85 @@ export default function TrendsPage() {
               {!loading && (data?.emerging_terms?.length ?? 0) === 0 && (
                 <div style={{ fontSize: 12, color: "var(--muted)", fontFamily: "var(--font-mono)" }}>
                   No emerging terms detected.
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="viz-panel">
+            <div className="viz-panel__header">
+              <span className="viz-panel__title">Narrative language drift</span>
+            </div>
+            <div style={{ padding: 12, display: "grid", gap: 8 }}>
+              {diffs.slice(0, 4).map((d) => (
+                <div key={d.topic_id} style={{ border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", padding: "8px 10px", background: "var(--surface-2)" }}>
+                  <div style={{ fontSize: 11, color: "var(--dim)", fontFamily: "var(--font-mono)", marginBottom: 4 }}>
+                    topic #{d.topic_id}
+                  </div>
+                  <div style={{ fontSize: 11, color: "var(--text-soft)", fontFamily: "var(--font-mono)", lineHeight: 1.6 }}>
+                    added: {(d.added ?? []).slice(0, 3).map((x) => x.term).join(", ") || "—"}
+                  </div>
+                  <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--font-mono)", lineHeight: 1.6 }}>
+                    dropped: {(d.dropped ?? []).slice(0, 3).map((x) => x.term).join(", ") || "—"}
+                  </div>
+                </div>
+              ))}
+              {!loading && diffs.length === 0 && (
+                <div style={{ fontSize: 12, color: "var(--muted)", fontFamily: "var(--font-mono)" }}>
+                  No language drift snapshots available.
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="viz-panel">
+            <div className="viz-panel__header">
+              <span className="viz-panel__title">Active anomaly alerts</span>
+            </div>
+            <div style={{ padding: 12, display: "grid", gap: 8 }}>
+              {alerts.slice(0, 5).map((a, i) => (
+                <div key={`${a.topic_id}-${i}`} style={{ border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", padding: "8px 10px", background: "var(--surface-2)" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 3 }}>
+                    <span style={{ fontSize: 10, color: "var(--amber)", fontFamily: "var(--font-mono)", textTransform: "uppercase" }}>
+                      {a.severity ?? "low"}
+                    </span>
+                    <span style={{ fontSize: 10, color: "var(--dim)", fontFamily: "var(--font-mono)" }}>
+                      topic #{a.topic_id ?? "?"} · {Number(a.score ?? 0).toFixed(2)}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 11, color: "var(--text-soft)", lineHeight: 1.5 }}>{a.reason ?? "anomaly detected"}</div>
+                </div>
+              ))}
+              {!loading && alerts.length === 0 && (
+                <div style={{ fontSize: 12, color: "var(--muted)", fontFamily: "var(--font-mono)" }}>
+                  No active alerts.
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="viz-panel">
+            <div className="viz-panel__header">
+              <span className="viz-panel__title">Counterfactual impact</span>
+            </div>
+            <div style={{ padding: 12, display: "grid", gap: 8 }}>
+              {counterfactual
+                .slice()
+                .sort((a, b) => b.impact_pct - a.impact_pct)
+                .slice(0, 5)
+                .map((row) => (
+                  <div key={`${row.topic_id}-${row.top_account}`} style={{ border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", padding: "8px 10px", background: "var(--surface-2)" }}>
+                    <div style={{ fontSize: 11, color: "var(--text)", fontFamily: "var(--font-mono)", marginBottom: 3 }}>
+                      topic #{row.topic_id} · {row.top_account}
+                    </div>
+                    <div style={{ fontSize: 11, color: "var(--coral)", fontFamily: "var(--font-mono)" }}>
+                      peak drops by {row.impact_pct.toFixed(1)}% if removed
+                    </div>
+                  </div>
+                ))}
+              {!loading && counterfactual.length === 0 && (
+                <div style={{ fontSize: 12, color: "var(--muted)", fontFamily: "var(--font-mono)" }}>
+                  No counterfactual summaries available.
                 </div>
               )}
             </div>

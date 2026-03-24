@@ -71,6 +71,7 @@ interface Props {
   data:   HeatmapData | null;
   width:  number;
   height: number;
+  mode?: "raw" | "activity-adjusted";
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -82,7 +83,7 @@ const MIN_CELL_H  = 16;
 
 // ── Canvas renderer ───────────────────────────────────────────────────────────
 
-export default function CoordHeatmap({ data, width, height }: Props) {
+export default function CoordHeatmap({ data, width, height, mode = "raw" }: Props) {
   const canvasRef  = useRef<HTMLCanvasElement>(null);
   const [hovered,  setHovered]  = useState<CellDetail | null>(null);
   const [selected, setSelected] = useState<CellDetail | null>(null);
@@ -114,15 +115,31 @@ export default function CoordHeatmap({ data, width, height }: Props) {
 
     // Build lookup: account+month → count
     const cellMap = new Map<string, number>();
+    const accountTotals = new Map<string, number>();
     for (const cell of data.cells) {
       cellMap.set(`${cell.account}__${cell.month}`, cell.count);
+      accountTotals.set(cell.account, (accountTotals.get(cell.account) ?? 0) + cell.count);
     }
 
-    // Max count for color scale
-    const maxCount = Math.max(1, ...data.cells.map((c) => c.count));
+    const valueMap = new Map<string, number>();
+    for (const account of data.accounts) {
+      for (const month of data.months) {
+        const key = `${account}__${month}`;
+        const rawCount = cellMap.get(key) ?? 0;
+        if (mode === "activity-adjusted") {
+          const total = accountTotals.get(account) ?? 0;
+          valueMap.set(key, total > 0 ? (rawCount / total) * 100 : 0);
+        } else {
+          valueMap.set(key, rawCount);
+        }
+      }
+    }
 
-    return { numRows, numCols, cellW, cellH, cellMap, maxCount, gridW, gridH };
-  }, [data, width, height]);
+    // Max value for color scale (depends on mode)
+    const maxCount = Math.max(1, ...[...valueMap.values()]);
+
+    return { numRows, numCols, cellW, cellH, cellMap, valueMap, maxCount, gridW, gridH };
+  }, [data, width, height, mode]);
 
   // Draw on canvas
   const draw = useCallback(() => {
@@ -148,7 +165,7 @@ export default function CoordHeatmap({ data, width, height }: Props) {
     ctx.fillStyle = "#0A0C0E";
     ctx.fillRect(0, 0, width, height);
 
-    const { cellW, cellH, cellMap, maxCount } = layout;
+    const { cellW, cellH, valueMap, maxCount } = layout;
 
     // Draw column labels (month names)
     ctx.font        = "9px ui-monospace, monospace";
@@ -186,7 +203,7 @@ export default function CoordHeatmap({ data, width, height }: Props) {
       // Cells
       data.months.forEach((month, ci) => {
         const cx    = ROW_LABEL_W + ci * (cellW + CELL_GAP);
-        const count = cellMap.get(`${account}__${month}`) ?? 0;
+        const count = valueMap.get(`${account}__${month}`) ?? 0;
 
         // Color: teal at full saturation for max count, near-invisible for 0
         const intensity = count / maxCount;
@@ -241,7 +258,7 @@ export default function CoordHeatmap({ data, width, height }: Props) {
 
       const account = data.accounts[ri];
       const month   = data.months[ci];
-      const count   = layout.cellMap.get(`${account}__${month}`) ?? 0;
+      const count   = layout.valueMap.get(`${account}__${month}`) ?? 0;
 
       return {
         account,

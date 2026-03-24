@@ -222,7 +222,7 @@ export default function MapPage() {
             borderRadius: "var(--radius-md)",
             overflow:     "hidden",
             border:       "1px solid var(--border)",
-            background:   "#0A0C0E",
+            background:   "radial-gradient(1200px 500px at 72% 18%, rgba(29,158,117,0.08), transparent 46%), radial-gradient(1000px 420px at 24% 76%, rgba(127,119,221,0.08), transparent 45%), #0A0C0E",
           }}
         >
           {dims.w > 0 && dims.h > 0 && (
@@ -242,6 +242,7 @@ export default function MapPage() {
             borderRadius: "var(--radius-md)",
             padding:      "8px 12px",
             flexShrink:   0,
+            boxShadow:    "inset 0 1px 0 rgba(255,255,255,0.02)",
           }}
         >
           {clusterError ? (

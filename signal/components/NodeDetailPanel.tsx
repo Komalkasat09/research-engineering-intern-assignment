@@ -59,7 +59,7 @@ export default function NodeDetailPanel({
   nodePostCount, connections = [], onClose,
 }: Props) {
   const router = useRouter();
-  const { setActiveTopic } = useSignalStore();
+  const { setActiveTopic, setInvestigationContext } = useSignalStore();
   const [tab, setTab] = useState<Tab>("overview");
   const [data, setData] = useState<AccountData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -385,8 +385,52 @@ export default function NodeDetailPanel({
         )}
 
         <div style={{ padding: "10px 16px 14px", borderTop: "1px solid #0D1A22" }}>
+          <div style={{ display: "flex", gap: 6, marginBottom: 8, flexWrap: "wrap" }}>
+            <button
+              onClick={() => {
+                setInvestigationContext({
+                  source: "graph",
+                  topicId: dominantTopic?.topic_id ?? null,
+                  narrativeName: dominantTopic?.name,
+                  note: `Drillthrough from graph node ${nodeId}`,
+                  createdAt: Date.now(),
+                });
+                if (dominantTopic?.topic_id !== undefined) setActiveTopic(dominantTopic.topic_id);
+                router.push("/map");
+              }}
+              className="chip"
+              style={{ border: "none", background: "transparent", cursor: "pointer" }}
+            >
+              Map
+            </button>
+            <button
+              onClick={() => {
+                setInvestigationContext({
+                  source: "graph",
+                  topicId: dominantTopic?.topic_id ?? null,
+                  narrativeName: dominantTopic?.name,
+                  note: `Drillthrough from graph node ${nodeId}`,
+                  createdAt: Date.now(),
+                });
+                if (dominantTopic?.topic_id !== undefined) setActiveTopic(dominantTopic.topic_id);
+                router.push("/stance");
+              }}
+              className="chip"
+              style={{ border: "none", background: "transparent", cursor: "pointer" }}
+            >
+              Stance
+            </button>
+          </div>
           <button
             onClick={() => {
+              setInvestigationContext({
+                source: "graph",
+                topicId: dominantTopic?.topic_id ?? null,
+                narrativeName: dominantTopic?.name,
+                note: `Investigate account ${nodeId} from graph panel`,
+                createdAt: Date.now(),
+              });
+              if (dominantTopic?.topic_id !== undefined) setActiveTopic(dominantTopic.topic_id);
               router.push(`/chat?q=Investigate+account+${encodeURIComponent(nodeId)}`);
             }}
             style={{

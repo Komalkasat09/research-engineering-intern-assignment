@@ -33,6 +33,7 @@ export const NAV_ITEMS = [
     section: "Investigate",
     items: [
       { href: "/chat",        label: "Ask Signal",            dot: "coral",  description: "OSINT chatbot" },
+      { href: "/benchmark",   label: "Benchmark",             dot: "amber",  description: "Model limits and eval" },
     ],
   },
 ] as const;

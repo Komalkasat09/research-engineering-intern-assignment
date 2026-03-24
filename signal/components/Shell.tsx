@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
 import type { DatasetMeta } from "@/types";
 import { useSignalStore } from "@/lib/store";
+import AnalystRail from "@/components/AnalystRail";
 
 // ─── Nav config ──────────────────────────────────────────────────────────────
 type NavItem = {
@@ -39,6 +40,7 @@ const NAV_SECTIONS: { title: string; items: NavItem[] }[] = [
     title: "Investigate",
     items: [
       { href: "/chat",        label: "Ask Signal",            dot: "coral" },
+      { href: "/benchmark",   label: "Benchmark",             dot: "amber" },
     ],
   },
 ];
@@ -105,9 +107,19 @@ export default function Shell({ children }: { children: React.ReactNode }) {
     setDateRange,
     platforms,
     togglePlatform,
+    analystRailOpen,
+    setAnalystRailOpen,
+    opsTheme,
+    toggleOpsTheme,
     meta,
     setMeta,
   } = useSignalStore();
+
+  const safeActiveTopic = mounted ? activeTopic : null;
+  const safeActiveRange = mounted ? activeRange : "All";
+  const safePlatforms = mounted ? platforms : ["reddit", "twitter"];
+  const safeAnalystRailOpen = mounted ? analystRailOpen : true;
+  const safeOpsTheme = mounted ? opsTheme : false;
 
   useEffect(() => {
     setMounted(true);
@@ -126,9 +138,15 @@ export default function Shell({ children }: { children: React.ReactNode }) {
   }, [meta, setMeta]);
 
   useEffect(() => {
+    if (!mounted) return;
     const { start, end } = resolveRange(activeRange, meta);
     setDateRange(start, end);
-  }, [activeRange, meta, setDateRange]);
+  }, [activeRange, meta, mounted, setDateRange]);
+
+  useEffect(() => {
+    if (!mounted) return;
+    document.documentElement.setAttribute("data-theme", opsTheme ? "ops" : "default");
+  }, [opsTheme, mounted]);
 
   const postsLabel = mounted && meta ? meta.total_posts.toLocaleString() : "—";
   const rangeLabel = mounted && meta ? `${meta.date_start} – ${meta.date_end}` : "—";
@@ -137,7 +155,9 @@ export default function Shell({ children }: { children: React.ReactNode }) {
     <div
       style={{
         display: "grid",
-        gridTemplateColumns: sidebarOpen ? `${224}px 1fr` : "0px 1fr",
+        gridTemplateColumns: sidebarOpen
+          ? `${224}px 1fr ${safeAnalystRailOpen ? "320px" : "0px"}`
+          : `0px 1fr ${safeAnalystRailOpen ? "320px" : "0px"}`,
         gridTemplateRows: "var(--topbar-h) 1fr",
         height: "100dvh",
         overflow: "hidden",
@@ -247,7 +267,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
         <div style={{ flex: 1 }} />
 
         {/* Active topic badge */}
-        {activeTopic !== null && (
+        {safeActiveTopic !== null && (
           <div
             style={{
               display:      "flex",
@@ -264,7 +284,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
             }}
           >
             <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#1D9E75", display: "inline-block" }} />
-            topic #{activeTopic}
+            topic #{safeActiveTopic}
             <button
               onClick={() => setActiveTopic(null)}
               aria-label="Clear topic filter"
@@ -289,7 +309,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
           {RANGES.map((r) => (
             <button
               key={r}
-              className={clsx("chip", activeRange === r && "active")}
+              className={clsx("chip", safeActiveRange === r && "active")}
               onClick={() => setActiveRange(r as typeof activeRange)}
               style={{ border: "none", background: "transparent" }}
             >
@@ -310,7 +330,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
         {/* Platform badges */}
         <div style={{ display: "flex", gap: 5 }}>
           <button
-            className={clsx("chip", platforms.includes("reddit") && "active")}
+            className={clsx("chip", safePlatforms.includes("reddit") && "active")}
             onClick={() => togglePlatform("reddit")}
             style={{ border: "none", background: "transparent" }}
             aria-label="Toggle Reddit data"
@@ -318,7 +338,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
             Reddit
           </button>
           <button
-            className={clsx("chip", platforms.includes("twitter") && "active")}
+            className={clsx("chip", safePlatforms.includes("twitter") && "active")}
             onClick={() => togglePlatform("twitter")}
             style={{ border: "none", background: "transparent" }}
             aria-label="Toggle Twitter/X data"
@@ -326,6 +346,24 @@ export default function Shell({ children }: { children: React.ReactNode }) {
             Twitter/X
           </button>
         </div>
+
+        <button
+          className={clsx("chip", safeAnalystRailOpen && "active")}
+          onClick={() => setAnalystRailOpen(!analystRailOpen)}
+          style={{ border: "none", background: "transparent" }}
+          aria-label="Toggle analyst rail"
+        >
+          Rail
+        </button>
+
+        <button
+          className={clsx("chip", safeOpsTheme && "active")}
+          onClick={toggleOpsTheme}
+          style={{ border: "none", background: "transparent" }}
+          aria-label="Toggle ops theme"
+        >
+          Ops mode
+        </button>
       </header>
 
       {/* ── Sidebar ────────────────────────────────────────────────────── */}
@@ -472,6 +510,8 @@ export default function Shell({ children }: { children: React.ReactNode }) {
       >
         {children}
       </main>
+
+      <AnalystRail open={safeAnalystRailOpen} onClose={() => setAnalystRailOpen(false)} />
     </div>
   );
 }

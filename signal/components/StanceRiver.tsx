@@ -53,12 +53,25 @@ interface TooltipState {
 
 // ── Week string → Date ────────────────────────────────────────────────────────
 function weekToDate(w: string): Date {
+  // Newer pipeline emits range labels like 2024-07-22/2024-07-28.
+  if (w.includes("/")) {
+    const start = new Date(w.split("/")[0]);
+    if (!Number.isNaN(start.getTime())) return start;
+  }
+
+  // Backward compatibility with labels like 2024-W31.
   const [year, week] = w.split("-W").map(Number);
-  const jan4         = new Date(year, 0, 4);
-  const dow          = jan4.getDay() || 7;
-  const monday       = new Date(jan4);
-  monday.setDate(jan4.getDate() - dow + 1 + (week - 1) * 7);
-  return monday;
+  if (Number.isFinite(year) && Number.isFinite(week)) {
+    const jan4 = new Date(year, 0, 4);
+    const dow = jan4.getDay() || 7;
+    const monday = new Date(jan4);
+    monday.setDate(jan4.getDate() - dow + 1 + (week - 1) * 7);
+    return monday;
+  }
+
+  // Final fallback if data uses plain date strings.
+  const direct = new Date(w);
+  return Number.isNaN(direct.getTime()) ? new Date(0) : direct;
 }
 
 // ── Margins ───────────────────────────────────────────────────────────────────

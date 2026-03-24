@@ -30,6 +30,7 @@ interface OriginCluster {
   color?: string;
   post_count?: number;
   origin_subreddit?: string;
+  spread_to?: string[];
   top_post?: OriginPost;
 }
 
@@ -71,6 +72,14 @@ interface TopNarrative {
   };
   origin_subreddit: string;
   peak_week: string;
+  confidence_score: number;
+  confidence_label: "high" | "medium" | "low";
+  rank_reason: {
+    score: number;
+    velocity_spike: number;
+    spread_count: number;
+    post_count: number;
+  };
 }
 
 interface TrendsResponse {
@@ -119,6 +128,24 @@ function trimPostText(text: string | undefined, maxLen = 200): string {
 function mean(values: number[]): number {
   if (!values.length) return 0;
   return values.reduce((sum, v) => sum + v, 0) / values.length;
+}
+
+function clamp01(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(0, Math.min(1, value));
+}
+
+function std(values: number[]): number {
+  if (!values.length) return 0;
+  const avg = mean(values);
+  const variance = mean(values.map((v) => (v - avg) ** 2));
+  return Math.sqrt(variance);
+}
+
+function confidenceLabel(score: number): "high" | "medium" | "low" {
+  if (score >= 0.72) return "high";
+  if (score >= 0.45) return "medium";
+  return "low";
 }
 
 function topWords(posts: MetaPost[], n = 50): Set<string> {
@@ -246,6 +273,12 @@ export async function GET() {
     );
 
     const rawName = origin?.name ?? topicNameMap.get(topicId) ?? `topic ${topicId}`;
+    const spreadCount = origin?.spread_to?.length ?? 0;
+    const recentStd = std(recentWindow);
+    const velocityStability = 1 - clamp01(recentStd / Math.max(recentAvg || 0.01, 0.01));
+    const volumeSignal = clamp01(Math.log10(Math.max(postCount, 1)) / 3);
+    const spreadSignal = clamp01(spreadCount / 8);
+    const confidenceScore = clamp01((velocityStability * 0.45) + (volumeSignal * 0.35) + (spreadSignal * 0.2));
 
     topNarratives.push({
       topic_id: topicId,
@@ -263,6 +296,14 @@ export async function GET() {
       },
       origin_subreddit: normalizeSubreddit(origin?.origin_subreddit),
       peak_week: peak?.week ?? "unknown",
+      confidence_score: Number(confidenceScore.toFixed(3)),
+      confidence_label: confidenceLabel(confidenceScore),
+      rank_reason: {
+        score: Number(topPost.score ?? 0),
+        velocity_spike: Number(recentMax.toFixed(4)),
+        spread_count: spreadCount,
+        post_count: Number.isFinite(postCount) ? postCount : 0,
+      },
     });
   }
 
