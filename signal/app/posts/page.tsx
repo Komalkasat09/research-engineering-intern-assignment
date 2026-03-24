@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
@@ -68,7 +69,7 @@ function interleavePosts(dataset: ExplorerPost[], live: ExplorerPost[]): Explore
   return out;
 }
 
-export default function PostsPage() {
+function PostsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { activeTopic, setActiveTopic, liveFeedResults } = useSignalStore();
@@ -470,5 +471,13 @@ export default function PostsPage() {
         }
       `}</style>
     </Shell>
+  );
+}
+
+export default function PostsPage() {
+  return (
+    <Suspense fallback={null}>
+      <PostsPageContent />
+    </Suspense>
   );
 }
