@@ -1,117 +1,188 @@
-# Signal - Narrative Intelligence Dashboard
+# Signal
 
-Signal is an investigative social-media analysis platform built for the SimPPL Research Engineering Intern assignment.
+Signal is an integrated narrative intelligence platform for investigating how online narratives emerge, spread, and mutate across communities.
 
-It focuses on a practical question:
+It combines:
 
-**How do narratives emerge, mutate, and spread across communities over time, and which actors or coordination patterns amplify them?**
+- Multi-view visual analytics
+- Real-time Reddit live feed injection and classification
+- Evidence-grounded analyst chat
+- Cross-view topic scoping and investigation context
 
-## Live Links
+## Submission Requirements
 
-- Hosted app: https://signal.vercel.app
-- Demo video: REPLACE_WITH_FINAL_VIDEO_LINK
+This section is intentionally formatted to match the assignment checklist.
 
-## What Is Implemented
+### 1. Publicly accessible hosted web platform URL
 
-### Core investigation views
+- Hosted URL: `ADD_PUBLIC_HOSTED_URL_HERE`
 
-- Narrative map (`/map`): semantic narrative clusters in 2D space with topic drilldown.
-- Timeline (`/timeline`): narrative velocity over time with event/context overlays.
-- Spread graph (`/graph`): account/subreddit network propagation analysis.
-- Narrative origins (`/origins`): where narratives started and spread timing.
-- Trends (`/trends`): rising narratives, confidence signals, and drillthrough actions.
-- Stance (`/stance`): executive + advanced stance analysis with caveats and blind spots.
-- Coordination signals (`/signals`): behavior synchronization and heatmap analytics.
-- Fingerprint (`/fingerprint`): AI-assisted narrative similarity / retrieval exploration.
-- Posts explorer (`/posts`): keyword + scoped raw post search with explainable ranking.
-- Ask Signal (`/chat`): streaming analyst chatbot with retrieved evidence and citations.
-- Benchmark (`/benchmark`): model and evaluation framing view.
+### 2. Detailed README with screenshots
 
-### Investigation workflow features
+Add screenshots of key views below (replace placeholders with real images in your repo):
 
-- Cross-view topic scoping via shared Zustand store.
-- Drillthrough from trends/graph/map into chat, stance, map, and posts.
-- Evidence export from chat (`/api/report/evidence`).
-- Analyst rail with alerts + weekly brief (`/api/alerts`, `/api/report/weekly-brief`).
+![Explore Workspace](docs/screenshots/explore-workspace.png)
+![Live Feed Injector](docs/screenshots/live-feed-injector.png)
+![Posts Explorer Both Mode](docs/screenshots/posts-explorer-both-mode.png)
+![Ask Signal](docs/screenshots/ask-signal.png)
 
-### API routes (implemented)
+### 3. Text-based system design explanation and thought process
 
-- `/api/clusters`
-- `/api/umap`
-- `/api/velocity`
-- `/api/graph`
-- `/api/origins`
-- `/api/trends`
-- `/api/coord`
-- `/api/stance`
-- `/api/stance/examples`
-- `/api/globe`
-- `/api/fingerprint`
-- `/api/chat`
-- `/api/posts/search`
+Signal was designed as an investigation workflow, not a set of disconnected charts. The core design decision was to keep one shared cross-view context (active topic + investigation context) and let every view contribute evidence for the same narrative thread.
+
+System design choices:
+
+- Frontend architecture:
+	- Next.js App Router with route-level pages for each investigation view.
+	- Components are optimized for visual analysis (map, graph, stance, timeline, live feed cards).
+- State model:
+	- Zustand provides shared topic scope and investigation context across views.
+	- Persistence is used for continuity (cross-page navigation and live feed restoration).
+- API design:
+	- Route handlers under `app/api` expose precomputed artifacts and live operations.
+	- APIs are narrowly scoped (clusters, graph, stance, origins, chat, posts search, live inject, reports).
+- Data strategy:
+	- Heavy analytics are precomputed in the Python pipeline and exported as artifacts.
+	- Runtime APIs stay responsive by reading generated JSON/meta files.
+- Chat strategy:
+	- Retrieval context is assembled from indexed metadata, then injected into a strict analyst system prompt.
+	- Response post-processing surfaces follow-up actions and risk flags in UI.
+- Live integration strategy:
+	- Live Reddit results are classified into existing clusters and merged into posts explorer.
+	- This bridges historical corpus analysis with real-time narrative monitoring.
+
+Thought process behind trade-offs:
+
+- Prioritized investigation speed and cross-view continuity over highly complex backend orchestration.
+- Chose explainable UI elements (why matched, confidence, origin/velocity cues) over opaque aggregate scores.
+- Kept model usage modular so model IDs and live classification behavior can be updated without redesigning the UI.
+
+### 4. Video walkthrough link (YouTube or Google Drive)
+
+- Video URL: `ADD_YOUTUBE_OR_GOOGLE_DRIVE_LINK_HERE`
+
+### 5. Evaluation helper note
+
+For reviewers, the fastest path to evaluate the integrated flow is:
+
+1. Open `/explore` and scope a topic.
+2. Open `/analysis/livefeed` and classify live query results.
+3. Open `/posts` and switch between Dataset/Live/Both.
+4. Send a post to `/chat` using "Send to Ask Signal".
+5. Verify follow-up chips and analyst alert behavior in Ask Signal.
+
+## Product Overview
+
+Signal is organized around a complete investigation workflow:
+
+1. Discover narratives and active clusters
+2. Inspect lifecycle, spread, stance, and coordination signals
+3. Ingest live Reddit posts and classify into narrative clusters
+4. Investigate raw posts with explainable matching
+5. Send evidence to Ask Signal for analyst-style synthesis
+
+## Main Routes
+
+### Explore
+
+- `/explore` - unified workspace (map, trends, origins, timeline paneling)
+- `/graph` - spread network graph
+- `/globe` - geospatial event context
+
+### Analysis
+
+- `/analysis/lifecycle` - narrative lifecycle (origin → acceleration → amplification → mutation)
+- `/analysis/livefeed` - live Reddit post injector and classifier
+- `/stance` - stance river and stance shifts over time
+- `/signals` - coordinated behavior and related risk views
+- `/fingerprint` - narrative fingerprint and similarity view
+
+### Investigate
+
+- `/chat` - Ask Signal (streaming investigative assistant)
+- `/posts` - posts explorer (dataset/live/both modes)
+- `/benchmark` - benchmark and evaluation page
+
+### Legacy/Direct Views (still present)
+
+- `/map`, `/timeline`, `/trends`, `/origins`
+
+## Integrated Features
+
+### Cross-view scoped investigations
+
+- Shared Zustand state for active topic and investigation context
+- Topic scope flows from explore/analysis into chat and posts explorer
+
+### Ask Signal enhancements
+
+- Retrieval-grounded responses
+- Analyst alert injection for coordination/velocity signals
+- Follow-up question generation (rendered as clickable chips)
+- Context-aware scoped prompts
+
+### Live feed + posts explorer integration
+
+- Live feed stores classified posts in app state
+- Posts explorer supports source modes:
+	- Dataset
+	- Live
+	- Both (interleaved with live marker)
+- Per-post action to send evidence to Ask Signal with prefilled prompt
+
+### Persistence behavior
+
+- Core app state persisted with Zustand
+- Live feed query/results cached in session storage and restored on return
+- Background refresh runs when returning to live feed with a prior query
+
+## Tech Stack
+
+- Next.js App Router (TypeScript, React)
+- Zustand for client state and persistence
+- Vercel AI SDK + Groq for chat/inference
+- Pixi.js, D3, and react-force-graph-2d for visuals
+- Python pipeline scripts for artifact generation
+
+## API Surface
+
+Implemented API routes include:
+
+- `/api/account/[id]`
 - `/api/alerts`
-- `/api/narrative-diff`
+- `/api/chat`
+- `/api/clusters`
+- `/api/coord`
 - `/api/counterfactual`
+- `/api/fingerprint`
+- `/api/globe`
+- `/api/graph`
+- `/api/live/inject`
+- `/api/narrative-diff`
+- `/api/origins`
+- `/api/posts/search`
 - `/api/report/evidence`
 - `/api/report/weekly-brief`
-- `/api/account/[id]`
+- `/api/stance`
+- `/api/trends`
+- `/api/umap`
+- `/api/velocity`
 
-## Architecture
+## Data Artifacts
 
-- Frontend: Next.js App Router + React + TypeScript
-- State: Zustand (persisted cross-view investigation state)
-- Visuals: Pixi.js (map), D3 (timeline/stance), react-force-graph-2d (network)
-- API layer: Next route handlers in `app/api`
-- Data artifacts: `public/data/*.json` + `data/faiss_meta.json`
-- Chat model: Groq (`llama-3.3-70b-versatile`) through AI SDK
-- Pipeline scripts: `scripts/01_load.py` ... `scripts/13_counterfactual.py`
+Expected data artifacts for full functionality:
 
-## Rubric Coverage (Self-Evaluation)
+- `public/data/topics.json`
+- `public/data/umap_points.json`
+- `public/data/velocity.json`
+- `public/data/stance_series.json`
+- `public/data/coord.json`
+- `public/data/graph.json`
+- `data/faiss_meta.json`
 
-### 1. Documentation quality
+If artifacts are missing, routes may return publication-safe missing-data responses unless synthetic mode is enabled.
 
-- Present: this README + `prompts.md`
-- To finalize: replace placeholder demo link, add final screenshots and final public URL if changed.
-
-### 2. Hosted frontend quality
-
-- Present: deployed Next.js dashboard, multi-view investigation UX, consistent design system.
-- To finalize: final visual polish pass + screenshot section update.
-
-### 3. Required summary statistics and visuals
-
-- Time series: timeline + velocity views.
-- Key themes/trends: map/trends/origins.
-- Community/account contributions: graph + coordination + origins.
-- Network visualization: spread graph implemented.
-
-### 4. Interactive querying + multimodal
-
-- Chatbot querying: implemented in `/chat` with evidence retrieval.
-- Multimodal: partial/limited in current build (primarily text-first corpus analysis).
-- Recommendation: explicitly document scope and add at least one lightweight multimodal extension for final submission.
-
-### 5. Creative/unique features
-
-- Confidence/rationale overlays for trend ranking.
-- Stance executive vs advanced interpretation modes.
-- Topic-scoped posts explorer with explainable ranking and pagination.
-- Analyst rail with alerts and weekly brief generation.
-
-## Case Study Walkthrough (Suggested Demo Script)
-
-Use one concrete narrative end-to-end in your video:
-
-1. Start in `/map`, select a topic cluster.
-2. Open `/timeline` to show narrative velocity inflection points.
-3. Open `/graph` to identify distribution hubs.
-4. Open `/posts` to show raw evidence + keyword matches.
-5. Ask a question in `/chat` and show cited evidence + follow-up angles.
-6. Conclude with what is known, uncertain, and what to investigate next.
-
-This structure satisfies the "tell a story with data" goal better than feature-by-feature clicking.
-
-## Local Setup
+## Setup
 
 ### Prerequisites
 
@@ -127,16 +198,20 @@ pip install -r scripts/requirements.txt
 
 ### Environment
 
-Create `.env.local` with:
+Create `.env.local`:
 
 ```dotenv
-GROQ_API_KEY=YOUR_KEY
+GROQ_API_KEY=your_key_here
 ```
 
 Optional:
 
 ```dotenv
+# Enable synthetic fallback behavior when artifacts are missing
 SIGNAL_ALLOW_SYNTHETIC_DATA=true
+
+# Optional override for live feed classifier model
+GROQ_MODEL_LIVE_INJECT=llama-3.3-70b-versatile
 ```
 
 ### Run
@@ -145,26 +220,45 @@ SIGNAL_ALLOW_SYNTHETIC_DATA=true
 npm run dev
 ```
 
-## Data + Pipeline
+### Build
 
-- Place dataset artifacts according to project expectations.
-- Generate/update artifacts using:
+```bash
+npm run build
+npm run start
+```
+
+## Pipeline
+
+Run the full artifact pipeline:
 
 ```bash
 bash scripts/run_pipeline.sh
 ```
 
-Pipeline stages include loading, embedding, clustering, stance, coordination, graph/indexing, origins, narrative diff, alerts, and counterfactual analysis.
+Pipeline stages:
 
-## Submission Checklist (Final)
+1. `01_load.py`
+2. `02_embed.py`
+3. `03_cluster.py`
+4. `04_stance.py`
+5. `05_coord.py`
+6. `06_graph.py`
+7. `07_index.py`
+8. `08_export_json.py`
+9. `09_validate.py`
+10. `10_origins.py`
+11. `11_narrative_diff.py`
+12. `12_alerts.py`
+13. `13_counterfactual.py`
 
-- [ ] README updated with real hosted URL + screenshots
-- [ ] Video walkthrough link added
-- [ ] System-design explanation included (README + summary)
-- [ ] Prompt log included (`prompts.md`)
-- [ ] Public deployment tested end-to-end
-- [ ] Email sent per assignment instructions
+## Developer Notes
 
-## Important Security Note
+- Use `/explore` as the default investigation entry point.
+- Use `/analysis/livefeed` to ingest and classify real-time Reddit posts.
+- Use `/posts` in Both mode to compare historical corpus posts with live classified posts.
+- Use Ask Signal for synthesis and follow-up investigative framing.
 
-If any API key was ever pasted into chat/logs/screenshots, rotate it immediately and update deployment secrets.
+## Security
+
+- Never commit API keys.
+- If any key has been exposed in logs/screenshots/chat, rotate it immediately.
