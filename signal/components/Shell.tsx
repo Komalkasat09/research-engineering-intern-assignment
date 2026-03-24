@@ -20,17 +20,16 @@ const NAV_SECTIONS: { title: string; items: NavItem[] }[] = [
   {
     title: "Explore",
     items: [
-      { href: "/map",         label: "Narrative map",         dot: "teal" },
-      { href: "/timeline",    label: "Timeline",              dot: "teal" },
-      { href: "/graph",       label: "Spread graph",          dot: "teal" },
-      { href: "/origins",     label: "Narrative origins",     dot: "purple" },
-      { href: "/trends",      label: "Trends",                dot: "coral" },
-      { href: "/globe",       label: "Globe",                 dot: "teal" },
+      { href: "/explore",     label: "Explore workspace",     dot: "teal" },
+      { href: "/graph",       label: "Spread graph",          dot: "amber" },
+      // { href: "/globe",       label: "Globe",                 dot: "teal" },
     ],
   },
   {
     title: "Analysis",
     items: [
+      { href: "/analysis/lifecycle", label: "Narrative lifecycle",   dot: "teal" },
+      { href: "/analysis/livefeed",  label: "Live feed injector",    dot: "coral" },
       { href: "/stance",      label: "Stance river",          dot: "amber" },
       { href: "/signals",     label: "Coord. behavior",       dot: "purple" },
       { href: "/fingerprint", label: "Narrative fingerprint", dot: "coral", badge: "AI" },
@@ -212,7 +211,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
 
         {/* Wordmark */}
         <Link
-          href="/map"
+          href="/explore"
           style={{
             textDecoration: "none",
             display: "flex",

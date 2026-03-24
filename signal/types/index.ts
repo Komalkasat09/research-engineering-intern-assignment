@@ -77,3 +77,34 @@ export interface CoordPair {
   avg_gap_min: number;
   shared_urls: string[];
 }
+
+// ── Live Injection API Types ───────────────────────────────────────────────
+
+export interface RedditPost {
+  title:       string;
+  selftext:    string;
+  subreddit:   string;
+  author:      string;
+  score:       number;
+  created_utc: number;
+  url:         string;
+}
+
+export interface ClusterAssignment {
+  cluster:         string;
+  cluster_id:      number;
+  confidence:      number;
+  is_new_narrative: boolean;
+  reasoning:       string;
+}
+
+export interface InjectedPost extends RedditPost {
+  assignment: ClusterAssignment;
+}
+
+export interface LiveInjectResponse {
+  posts:      InjectedPost[];
+  query:      string;
+  total:      number;
+  timestamp:  string;
+}

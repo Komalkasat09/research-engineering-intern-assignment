@@ -16,6 +16,10 @@ interface Message {
   id:      string;
   role:    "user" | "assistant";
   content: string;
+  followups?: string[];
+  suspicionFlag?: boolean;
+  suspicionTopic?: string;
+  suspicionDate?: string;
 }
 
 // ── Suggested starter queries ─────────────────────────────────────────────────
@@ -33,11 +37,16 @@ const SUGGESTED_QUERIES = [
 interface MessageBubbleProps {
   role:    "user" | "assistant";
   content: string;
+  followups?: string[];
+  suspicionFlag?: boolean;
+  suspicionTopic?: string;
+  suspicionDate?: string;
   isLast:  boolean;
   isStreaming: boolean;
+  onFollowupClick: (followup: string) => void;
 }
 
-function MessageBubble({ role, content, isLast, isStreaming }: MessageBubbleProps) {
+function MessageBubble({ role, content, followups, suspicionFlag, suspicionTopic, suspicionDate, isLast, isStreaming, onFollowupClick }: MessageBubbleProps) {
   if (role === "user") {
     return (
       <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
@@ -62,7 +71,7 @@ function MessageBubble({ role, content, isLast, isStreaming }: MessageBubbleProp
 
   const followupIdx = content.indexOf("Follow-up angles:");
   const mainContent = followupIdx > -1 ? content.slice(0, followupIdx).trim() : content;
-  const followups   = followupIdx > -1 ? content.slice(followupIdx).trim() : null;
+  const followupSection = followupIdx > -1 ? content.slice(followupIdx).trim() : null;
 
   return (
     <div style={{ marginBottom: 16 }}>
@@ -81,6 +90,23 @@ function MessageBubble({ role, content, isLast, isStreaming }: MessageBubbleProp
         <span style={{ fontSize: 10, color: "#4A5568", fontFamily: "var(--font-mono)", letterSpacing: "0.06em" }}>
           signal · osint analysis
         </span>
+        {suspicionFlag && (
+          <span
+            title={suspicionTopic ? `Coordination/velocity alert for ${suspicionTopic}` : "Coordination/velocity alert"}
+            style={{
+              fontSize: 10,
+              color: "#E3A008",
+              fontFamily: "var(--font-mono)",
+              border: "1px solid rgba(227,160,8,0.45)",
+              background: "rgba(227,160,8,0.12)",
+              borderRadius: 999,
+              padding: "2px 8px",
+              letterSpacing: "0.04em",
+            }}
+          >
+            ⚠ analyst alert{suspicionDate && suspicionDate !== "unknown-date" ? ` · ${suspicionDate}` : ""}
+          </span>
+        )}
       </div>
 
       {/* Main analysis */}
@@ -90,15 +116,39 @@ function MessageBubble({ role, content, isLast, isStreaming }: MessageBubbleProp
       />
 
       {/* Follow-up angles */}
-      {followups && (
+      {followupSection && (
         <div style={{ marginTop: 10, paddingLeft: 30, borderLeft: "2px solid #1D9E75", paddingTop: 6, paddingBottom: 6 }}>
           <div style={{ fontSize: 10, color: "#1D9E75", fontFamily: "var(--font-mono)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>
             Follow-up angles
           </div>
           <div
             style={{ fontSize: 12, fontFamily: "var(--font-serif)", color: "#8A9BB0", lineHeight: 1.7, fontStyle: "italic" }}
-            dangerouslySetInnerHTML={{ __html: formatAnalysis(followups.replace("Follow-up angles:", "").trim()) }}
+            dangerouslySetInnerHTML={{ __html: formatAnalysis(followupSection.replace("Follow-up angles:", "").trim()) }}
           />
+        </div>
+      )}
+
+      {!!followups?.length && (
+        <div style={{ marginTop: 10, paddingLeft: 30, display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {followups.map((item, idx) => (
+            <button
+              key={`${item}-${idx}`}
+              onClick={() => onFollowupClick(item)}
+              style={{
+                border: "1px solid rgba(29,158,117,0.35)",
+                background: "rgba(29,158,117,0.09)",
+                color: "#9DD5C3",
+                borderRadius: 999,
+                padding: "4px 10px",
+                fontSize: 11,
+                fontFamily: "var(--font-sans)",
+                cursor: "pointer",
+                lineHeight: 1.35,
+              }}
+            >
+              {item}
+            </button>
+          ))}
         </div>
       )}
 
@@ -129,6 +179,55 @@ function formatAnalysis(text: string): string {
     )
     .replace(/\n\n/g, "<br/><br/>")
     .replace(/\n/g, "<br/>");
+}
+
+function parseFollowupsFromText(text: string): { cleanContent: string; followups: string[] } {
+  const fencedMatch = text.match(/```json\s*([\s\S]*?)```\s*$/i);
+  const objectMatch = text.match(/(\{[\s\S]*?followups[\s\S]*?\})\s*$/i);
+  const candidates = [fencedMatch?.[1], objectMatch?.[1]].filter((value): value is string => Boolean(value));
+
+  for (const candidate of candidates) {
+    const parsedFollowups = parseFollowupCandidate(candidate);
+    if (!parsedFollowups.length) continue;
+
+    const matchText = fencedMatch?.[1] === candidate
+      ? fencedMatch?.[0] ?? candidate
+      : objectMatch?.[0] ?? candidate;
+
+    return {
+      cleanContent: text.replace(matchText, "").trim(),
+      followups: parsedFollowups.slice(0, 3),
+    };
+  }
+
+  return { cleanContent: text.trim(), followups: [] };
+}
+
+function parseFollowupCandidate(raw: string): string[] {
+  const normalized = raw
+    .replace(/^```json\s*/i, "")
+    .replace(/```$/i, "")
+    .trim();
+
+  const attempts = [
+    normalized,
+    normalized.replace(/([{,]\s*)followups\s*:/i, '$1"followups":'),
+  ];
+
+  for (const attempt of attempts) {
+    try {
+      const parsed = JSON.parse(attempt) as { followups?: unknown };
+      if (!Array.isArray(parsed.followups)) continue;
+      const cleaned = parsed.followups
+        .map((item) => String(item).trim())
+        .filter((item) => item.length > 0);
+      if (cleaned.length) return cleaned;
+    } catch {
+      // Continue with the next normalization variant.
+    }
+  }
+
+  return [];
 }
 
 // ── Empty state ───────────────────────────────────────────────────────────────
@@ -199,6 +298,15 @@ export default function AskSignal({ initialMessage }: Props) {
 
     const userMsg: Message = { id: Date.now().toString(), role: "user", content: text };
     const assistantId = (Date.now() + 1).toString();
+    const scopedPrefix = activeTopic !== null ? `[Current investigation scope: ${activeTopic}]\n` : "";
+
+    const outgoingMessages = [...messages, userMsg].map((m) => {
+      if (m.role !== "user") return { role: m.role, content: m.content };
+      return {
+        role: m.role,
+        content: m.content.startsWith("[Current investigation scope:") ? m.content : `${scopedPrefix}${m.content}`,
+      };
+    });
 
     setMessages((prev) => [...prev, userMsg, { id: assistantId, role: "assistant", content: "" }]);
     setIsLoading(true);
@@ -210,7 +318,7 @@ export default function AskSignal({ initialMessage }: Props) {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify({
-          messages:    [...messages, userMsg].map((m) => ({ role: m.role, content: m.content })),
+          messages:    outgoingMessages,
           activeTopic,
           investigationContext,
         }),
@@ -225,6 +333,21 @@ export default function AskSignal({ initialMessage }: Props) {
       const reader = res.body?.getReader();
       if (!reader) throw new Error("No response body");
 
+      const suspicionFlag = res.headers.get("x-signal-suspicion-flag") === "1";
+      const suspicionTopicHeader = res.headers.get("x-signal-suspicion-topic");
+      const suspicionTopic = suspicionTopicHeader ? decodeURIComponent(suspicionTopicHeader) : undefined;
+      const suspicionDate = res.headers.get("x-signal-suspicion-date") ?? undefined;
+
+      if (suspicionFlag) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantId
+              ? { ...m, suspicionFlag: true, suspicionTopic, suspicionDate }
+              : m
+          )
+        );
+      }
+
       const decoder = new TextDecoder();
       let accumulated = "";
 
@@ -237,6 +360,19 @@ export default function AskSignal({ initialMessage }: Props) {
           prev.map((m) => (m.id === assistantId ? { ...m, content: current } : m))
         );
       }
+
+      const parsed = parseFollowupsFromText(accumulated);
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === assistantId
+            ? {
+                ...m,
+                content: parsed.cleanContent,
+                followups: parsed.followups,
+              }
+            : m
+        )
+      );
     } catch (err) {
       if ((err as Error).name === "AbortError") return;
       const msg = err instanceof Error ? err.message : "Unknown error";
@@ -335,8 +471,13 @@ export default function AskSignal({ initialMessage }: Props) {
                 key={m.id}
                 role={m.role}
                 content={m.content}
+                followups={m.followups}
+                suspicionFlag={m.suspicionFlag}
+                suspicionTopic={m.suspicionTopic}
+                suspicionDate={m.suspicionDate}
                 isLast={i === messages.length - 1}
                 isStreaming={isLoading && i === messages.length - 1}
+                onFollowupClick={handleSuggest}
               />
             ))}
             {/* Waiting for first token */}
@@ -366,6 +507,23 @@ export default function AskSignal({ initialMessage }: Props) {
 
       {/* Input area */}
       <div style={{ padding: "12px 20px 16px", borderTop: "1px solid #1E2530", flexShrink: 0 }}>
+        {activeTopic !== null && (
+          <div style={{ marginBottom: 8, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+            <span
+              style={{
+                border: "1px solid rgba(29,158,117,0.35)",
+                background: "rgba(29,158,117,0.1)",
+                color: "#9DD5C3",
+                borderRadius: 999,
+                padding: "3px 9px",
+                fontSize: 11,
+                fontFamily: "var(--font-mono)",
+              }}
+            >
+              Current investigation scope: {activeTopic}
+            </span>
+          </div>
+        )}
         <form onSubmit={handleSubmit} style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
           <textarea
             value={input}

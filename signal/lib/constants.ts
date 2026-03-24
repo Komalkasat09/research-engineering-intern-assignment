@@ -13,17 +13,16 @@ export const NAV_ITEMS = [
   {
     section: "Explore",
     items: [
-      { href: "/map",         label: "Narrative map",         dot: "teal",   description: "UMAP semantic space" },
-      { href: "/timeline",    label: "Timeline",              dot: "teal",   description: "Velocity + events" },
-      { href: "/graph",       label: "Spread graph",          dot: "teal",   description: "Account network" },
-      { href: "/origins",     label: "Narrative origins",     dot: "purple", description: "Who said it first" },
-      { href: "/trends",      label: "Trends",                dot: "coral",  description: "Rising narratives" },
+      { href: "/explore",     label: "Explore workspace",     dot: "teal",   description: "Map + trends + origins + timeline" },
+      { href: "/graph",       label: "Spread graph",          dot: "amber",  description: "Propagation network" },
       { href: "/globe",       label: "Globe",                 dot: "teal",   description: "Geospatial events" },
     ],
   },
   {
     section: "Analysis",
     items: [
+      { href: "/analysis/lifecycle", label: "Narrative lifecycle",   dot: "teal",   description: "Origin to mutation storyline" },
+      { href: "/analysis/livefeed",  label: "Live feed injector",    dot: "coral",  description: "Real-time Reddit post mapping" },
       { href: "/stance",      label: "Stance river",          dot: "amber",  description: "Pro/con over time" },
       { href: "/signals",     label: "Coord. behavior",       dot: "purple", description: "Synchronized posting" },
       { href: "/fingerprint", label: "Narrative fingerprint", dot: "coral",  description: "Multi-community sim" },

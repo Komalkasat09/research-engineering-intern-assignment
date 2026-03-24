@@ -2,7 +2,7 @@
 "use client";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import type { DatasetMeta } from "@/types";
+import type { DatasetMeta, InjectedPost } from "@/types";
 
 export type TimeRangePreset = "Jul 2024" | "Aug" | "Sep" | "Oct" | "Nov" | "Dec 2024" | "Jan 2025" | "All";
 export type PlatformFilter = "reddit" | "twitter";
@@ -44,6 +44,11 @@ interface SignalStore {
   toggleOpsTheme: () => void;
   meta:           DatasetMeta | null;
   setMeta:        (meta: DatasetMeta) => void;
+  liveFeedResults: InjectedPost[] | null;
+  setLiveFeedResults: (posts: InjectedPost[] | null) => void;
+  showLiveLayer:   boolean;
+  setShowLiveLayer: (show: boolean) => void;
+  toggleShowLiveLayer: () => void;
 }
 
 export const useSignalStore = create<SignalStore>()(
@@ -82,6 +87,11 @@ export const useSignalStore = create<SignalStore>()(
       toggleOpsTheme: () => set((state) => ({ opsTheme: !state.opsTheme })),
       meta:           null,
       setMeta:        (meta) => set({ meta }),
+      liveFeedResults: null,
+      setLiveFeedResults: (posts) => set({ liveFeedResults: posts }),
+      showLiveLayer: false,
+      setShowLiveLayer: (show) => set({ showLiveLayer: show }),
+      toggleShowLiveLayer: () => set((state) => ({ showLiveLayer: !state.showLiveLayer })),
     }),
     {
       name: "signal-store-v1",
@@ -96,6 +106,7 @@ export const useSignalStore = create<SignalStore>()(
         investigationContext: state.investigationContext,
         analystRailOpen: state.analystRailOpen,
         opsTheme: state.opsTheme,
+        showLiveLayer: state.showLiveLayer,
       }),
     }
   )

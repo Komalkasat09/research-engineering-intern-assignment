@@ -27,7 +27,7 @@ import * as PIXI from "pixi.js";
 import { useSignalStore } from "@/lib/store";
 import { cleanTopicName } from "@/lib/cleanTopicName";
 import { fetchMapData, type MapPoint, type MapData } from "@/lib/mapData";
-import type { TopicCluster } from "@/types";
+import type { TopicCluster, InjectedPost } from "@/types";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -49,6 +49,10 @@ interface TooltipState {
   postId:    string;
   topicName: string;
   score:     number;
+  isLivePost?: boolean;
+  livePostTitle?: string;
+  subreddit?: string;
+  confidence?: number;
 }
 
 // ── Circular texture factory ──────────────────────────────────────────────────
@@ -105,9 +109,11 @@ export default function NarrativeCanvas({ width, height }: NarrativeCanvasProps)
   const appRef        = useRef<PIXI.Application | null>(null);
   const containerRef  = useRef<PIXI.ParticleContainer | null>(null);
   const labelsRef     = useRef<PIXI.Container | null>(null);
+  const livePostsRef  = useRef<PIXI.Container | null>(null);
   const spritesRef    = useRef<PIXI.Sprite[]>([]);
   const pointsRef     = useRef<MapPoint[]>([]);
   const clustersRef   = useRef<TopicCluster[]>([]);
+  const livePostsDataRef = useRef<Array<{ post: InjectedPost; sprite: PIXI.Graphics }>>([]);
   const isDragging    = useRef(false);
   const lastPanPos    = useRef({ x: 0, y: 0 });
   const zoomRef       = useRef(1);
@@ -119,7 +125,7 @@ export default function NarrativeCanvas({ width, height }: NarrativeCanvasProps)
     visible: false, x: 0, y: 0, postId: "", topicName: "", score: 0,
   });
 
-  const { activeTopic, setActiveTopic, setMeta } = useSignalStore();
+  const { activeTopic, setActiveTopic, setMeta, liveFeedResults, showLiveLayer } = useSignalStore();
   const activeTopicRef = useRef(activeTopic);
   activeTopicRef.current = activeTopic;
   const suppressNextCanvasClick = useRef(false);
@@ -344,6 +350,104 @@ export default function NarrativeCanvas({ width, height }: NarrativeCanvasProps)
     [setActiveTopic],
   );
 
+  // ── Build live posts layer ────────────────────────────────────────────────
+  const buildLivePostsLayer = useCallback(
+    (posts: InjectedPost[], clusters: TopicCluster[], data: MapData) => {
+      if (!appRef.current || !showLiveLayer) return;
+
+      // Clear previous live posts
+      if (livePostsRef.current) {
+        appRef.current.stage.children[0]?.removeChild(livePostsRef.current);
+      }
+      livePostsDataRef.current = [];
+
+      const livePostsContainer = new PIXI.Container();
+      appRef.current.stage.children[0]?.addChild(livePostsContainer);
+      livePostsRef.current = livePostsContainer;
+
+      for (const post of posts) {
+        const cluster = clusters.find((c) => c.id === post.assignment.cluster_id);
+        if (!cluster) continue;
+
+        // Find cluster centroid
+        const clusterPoints = data.points.filter(
+          (p: MapPoint) => p.topicId === cluster.id
+        );
+        if (clusterPoints.length === 0) continue;
+
+        const centroidX =
+          clusterPoints.reduce((s: number, p: MapPoint) => s + p.x, 0) /
+          clusterPoints.length;
+        const centroidY =
+          clusterPoints.reduce((s: number, p: MapPoint) => s + p.y, 0) /
+          clusterPoints.length;
+
+        // Add small random offset (±10-15% of centroid position spread)
+        const offsetRange = 30;
+        const offsetX = (Math.random() - 0.5) * offsetRange;
+        const offsetY = (Math.random() - 0.5) * offsetRange;
+
+        const x = centroidX + offsetX;
+        const y = centroidY + offsetY;
+
+        // Create circle: white outline + cluster color fill
+        const circle = new PIXI.Graphics();
+        const fillColor = parseInt(topicColor(cluster.id).replace("#", ""), 16);
+        const radius = 10; // Live posts larger than regular posts
+
+        // Draw: fill with cluster color, stroke with white
+        circle
+          .circle(0, 0, radius)
+          .fill(fillColor)
+          .stroke({ color: 0xffffff, width: 2.5, alpha: 0.9 });
+
+        circle.x = x;
+        circle.y = y;
+        circle.eventMode = "static";
+        circle.cursor = "pointer";
+
+        // Pulsing animation
+        circle.alpha = 0.85;
+        const pulse = () => {
+          const time = Date.now() * 0.003;
+          circle.alpha = 0.7 + Math.sin(time) * 0.15;
+          requestAnimationFrame(pulse);
+        };
+        pulse();
+
+        // Hover: show tooltip
+        circle.on("pointermove", (ev: PIXI.FederatedPointerEvent) => {
+          const globalPos = ev.global;
+          setTooltip({
+            visible: true,
+            x: globalPos.x + 12,
+            y: globalPos.y - 8,
+            postId: `live_${post.url}`,
+            topicName: cluster.name,
+            score: post.score,
+            isLivePost: true,
+            livePostTitle: post.title.slice(0, 60),
+            subreddit: post.subreddit,
+            confidence: post.assignment.confidence,
+          });
+        });
+
+        circle.on("pointerout", () => {
+          setTooltip((t) => ({ ...t, visible: false }));
+        });
+
+        // Click: open post
+        circle.on("pointertap", () => {
+          window.open(post.url, "_blank");
+        });
+
+        livePostsContainer.addChild(circle);
+        livePostsDataRef.current.push({ post, sprite: circle });
+      }
+    },
+    [showLiveLayer]
+  );
+
   // ── Initialise Pixi + load data ───────────────────────────────────────────
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -440,6 +544,9 @@ export default function NarrativeCanvas({ width, height }: NarrativeCanvasProps)
         spritesRef.current = sprites;
         applyAlpha(activeTopicRef.current);
         if (!isDisposed) buildLabels(data.clusters, data);
+        if (!isDisposed && liveFeedResults && liveFeedResults.length > 0) {
+          buildLivePostsLayer(liveFeedResults, data.clusters, data);
+        }
         setLoading(false);
       } catch (err) {
         console.error("[NarrativeCanvas]", err);
@@ -485,6 +592,25 @@ export default function NarrativeCanvas({ width, height }: NarrativeCanvasProps)
   useEffect(() => {
     applyAlpha(activeTopic);
   }, [activeTopic, applyAlpha]);
+
+  // ── React to live feed results or show layer toggle ───────────────────────
+  useEffect(() => {
+    if (!appRef.current) return;
+
+    // Rebuild live posts layer
+    if (liveFeedResults && showLiveLayer && pointsRef.current.length > 0) {
+      buildLivePostsLayer(liveFeedResults, clustersRef.current, {
+        points: pointsRef.current,
+        clusters: clustersRef.current,
+        meta: { total_posts: 0, date_start: "", date_end: "", subreddits: 0, unique_authors: 0, topic_count: 0 },
+      } as MapData);
+    } else if (livePostsRef.current && !showLiveLayer) {
+      // Hide live posts if toggle is off
+      appRef.current.stage.children[0]?.removeChild(livePostsRef.current);
+      livePostsRef.current = null;
+      livePostsDataRef.current = [];
+    }
+  }, [liveFeedResults, showLiveLayer, buildLivePostsLayer]);
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -564,27 +690,46 @@ export default function NarrativeCanvas({ width, height }: NarrativeCanvasProps)
             left:        tooltip.x,
             top:         tooltip.y,
             background:  "#111418",
-            border:      "1px solid #1E2530",
+            border:      tooltip.isLivePost ? "2px solid #1D9E75" : "1px solid #1E2530",
             borderRadius: 6,
-            padding:     "6px 10px",
+            padding:     "8px 10px",
             pointerEvents: "none",
             fontSize:    11,
             fontFamily:  "var(--font-mono)",
             lineHeight:  1.6,
             zIndex:      10,
             minWidth:    140,
-            maxWidth:    220,
+            maxWidth:    280,
           }}
         >
-          <div style={{ color: "#E2E8F0", fontWeight: 500 }}>
-            {tooltip.topicName}
-          </div>
-          <div style={{ color: "#4A5568", marginTop: 2 }}>
-            {tooltip.postId.slice(0, 16)}…
-          </div>
-          <div style={{ color: "#8A9BB0", marginTop: 1 }}>
-            score: {tooltip.score.toLocaleString()}
-          </div>
+          {tooltip.isLivePost ? (
+            <>
+              <div style={{ color: "#1D9E75", fontWeight: 600, fontSize: "10px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                Live Post
+              </div>
+              <div style={{ color: "#E2E8F0", fontWeight: 500, marginTop: 4, fontSize: "12px", wordBreak: "break-word" }}>
+                {tooltip.livePostTitle}
+              </div>
+              <div style={{ color: "#8A9BB0", marginTop: 2, fontSize: "10px" }}>
+                r/{tooltip.subreddit} · ↑{tooltip.score?.toLocaleString()}
+              </div>
+              <div style={{ color: "#1D9E75", marginTop: 2, fontSize: "10px", fontWeight: 500 }}>
+                {Math.round((tooltip.confidence ?? 0) * 100)}% confident
+              </div>
+            </>
+          ) : (
+            <>
+              <div style={{ color: "#E2E8F0", fontWeight: 500 }}>
+                {tooltip.topicName}
+              </div>
+              <div style={{ color: "#4A5568", marginTop: 2 }}>
+                {tooltip.postId.slice(0, 16)}…
+              </div>
+              <div style={{ color: "#8A9BB0", marginTop: 1 }}>
+                score: {tooltip.score.toLocaleString()}
+              </div>
+            </>
+          )}
         </div>
       )}
 

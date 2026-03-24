@@ -168,6 +168,12 @@ interface InvestigationContextPayload {
   note?: string;
 }
 
+interface AnalystAlert {
+  triggered: boolean;
+  topic: string;
+  date: string;
+}
+
 let cachedFaissMeta: FaissMetaPost[] | null = null;
 
 function loadFaissMeta(): FaissMetaPost[] | null {
@@ -214,6 +220,56 @@ function retrieveContextFromMeta(query: string, k = 8): string | null {
 
   if (scored.length === 0) return null;
   return scored.join("\n\n");
+}
+
+const COORDINATION_TERMS = [
+  "coordination",
+  "coordinated",
+  "synchronized",
+  "sync",
+  "cross-post overlap",
+  "amplifying",
+  "amplification",
+  "shared urls",
+  "url-pair",
+];
+
+const VELOCITY_TERMS = [
+  "velocity spike",
+  "high-velocity",
+  "spike",
+  "surge",
+  "peaked",
+  "viral",
+];
+
+const FOLLOWUP_JSON_INSTRUCTION = `End your response with a JSON block:
+{ followups: [string, string, string] }
+These should be investigative next steps, not clarifications.`;
+
+function detectAnalystAlert(args: {
+  retrievedContext: string;
+  activeTopic: number | null;
+  investigationContext: InvestigationContextPayload | null;
+}): AnalystAlert {
+  const lowered = args.retrievedContext.toLowerCase();
+  const hasCoordinationSignal = COORDINATION_TERMS.some((term) => lowered.includes(term));
+  const hasVelocityAnomaly = VELOCITY_TERMS.some((term) => lowered.includes(term));
+
+  if (!hasCoordinationSignal && !hasVelocityAnomaly) {
+    return { triggered: false, topic: "", date: "" };
+  }
+
+  const explicitDate = args.retrievedContext.match(/\b\d{4}-\d{2}-\d{2}\b/)?.[0] ?? "unknown-date";
+  const topic = args.investigationContext?.narrativeName
+    ?? (args.investigationContext?.topicId != null ? `topic #${args.investigationContext.topicId}` : null)
+    ?? (args.activeTopic != null ? `topic #${args.activeTopic}` : "current topic");
+
+  return {
+    triggered: true,
+    topic,
+    date: explicitDate,
+  };
 }
 
 // ── System prompt ─────────────────────────────────────────────────────────────
@@ -267,10 +323,12 @@ export async function POST(req: NextRequest) {
 
   // Parse request body
   let messages: Array<{ role: string; content: string }>;
+  let activeTopic: number | null = null;
   let investigationContext: InvestigationContextPayload | null = null;
   try {
     const body = await req.json();
     messages = body.messages;
+    activeTopic = typeof body.activeTopic === "number" ? body.activeTopic : null;
     investigationContext = body.investigationContext ?? null;
     if (!messages?.length) throw new Error("No messages");
   } catch {
@@ -300,6 +358,11 @@ export async function POST(req: NextRequest) {
   }
 
   const retrievedContext = realContext ?? retrieveContext(lastUserMessage);
+  const analystAlert = detectAnalystAlert({
+    retrievedContext,
+    activeTopic,
+    investigationContext,
+  });
 
   const contextBlock = investigationContext
     ? `
@@ -316,6 +379,13 @@ ACTIVE INVESTIGATION CONTEXT:
 Use this context to prioritize relevant evidence and keep your answer scoped to the active investigation.`
     : "";
 
+  const analystAlertBlock = analystAlert.triggered
+    ? `
+
+ANALYST ALERT: Coordination signals detected for ${analystAlert.topic}.
+Velocity spike on ${analystAlert.date}. Factor this into your response and flag if the user should be concerned.`
+    : "";
+
   // Build augmented system prompt with evidence
   const augmentedSystem = `${SYSTEM_PROMPT}
 
@@ -326,6 +396,10 @@ RETRIEVED EVIDENCE (top posts matching the query — treat these as primary sour
 ${retrievedContext}
 
 When answering, reference these posts by their ID (e.g., [post_001]) and quote brief excerpts to support your analysis. If the retrieved posts don't directly answer the question, say so and reason from general dataset patterns.
+
+${FOLLOWUP_JSON_INSTRUCTION}
+
+${analystAlertBlock}
 
 ${contextBlock}
 
@@ -345,7 +419,18 @@ Remaining rate limit for this session: ${remaining} requests.`;
       temperature:     0.25,
     });
 
-    return result.toTextStreamResponse();
+    const streamedResponse = result.toTextStreamResponse();
+    const headers = new Headers(streamedResponse.headers);
+    headers.set("x-signal-suspicion-flag", analystAlert.triggered ? "1" : "0");
+    if (analystAlert.triggered) {
+      headers.set("x-signal-suspicion-topic", encodeURIComponent(analystAlert.topic));
+      headers.set("x-signal-suspicion-date", analystAlert.date);
+    }
+
+    return new Response(streamedResponse.body, {
+      status: streamedResponse.status,
+      headers,
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     console.error("[/api/chat] Groq error:", message);
