@@ -25,7 +25,8 @@
  */
 
 import dynamic from "next/dynamic";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import Shell from "@/components/Shell";
 import StatRow from "@/components/StatRow";
 import ClusterLegend from "@/components/ClusterLegend";
@@ -91,7 +92,8 @@ function CanvasLoadingDots() {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function MapPage() {
-  const { meta, activeTopic } = useSignalStore();
+  const { meta, activeTopic, setActiveTopic } = useSignalStore();
+  const router = useRouter();
   const dateRange =
     meta?.date_start && meta?.date_end
       ? `${meta.date_start} to ${meta.date_end}`
@@ -105,6 +107,7 @@ export default function MapPage() {
   // of the heavy canvas component
   const [clusters, setClusters] = useState<TopicCluster[]>([]);
   const [clusterError, setClusterError] = useState<string | null>(null);
+  const [topicQuery, setTopicQuery] = useState("");
 
   // Load cluster metadata
   useEffect(() => {
@@ -138,6 +141,18 @@ export default function MapPage() {
   const emergingCount = clusters.filter(
     (c) => c.count > 1000 && c.count < 10000
   ).length;
+
+  const topicSuggestions = useMemo(() => {
+    const q = topicQuery.trim().toLowerCase();
+    if (!q) return [];
+    return clusters
+      .filter((c) => c.id !== -1)
+      .filter((c) => {
+        const hay = `${c.name} ${(c.top_words ?? []).join(" ")}`.toLowerCase();
+        return hay.includes(q);
+      })
+      .slice(0, 6);
+  }, [topicQuery, clusters]);
 
   return (
     <Shell>
@@ -198,6 +213,91 @@ export default function MapPage() {
             },
           ]}
         />
+
+        <div style={{ marginTop: 10, position: "relative", maxWidth: 520 }}>
+          <input
+            value={topicQuery}
+            onChange={(e) => setTopicQuery(e.target.value)}
+            placeholder="Search topic or keyword to focus map"
+            style={{
+              width: "100%",
+              background: "#0D1014",
+              border: "1px solid #1E2530",
+              borderRadius: 10,
+              padding: "9px 11px",
+              color: "var(--text)",
+              fontSize: 12,
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && topicSuggestions.length > 0) {
+                setActiveTopic(topicSuggestions[0].id);
+                setTopicQuery("");
+              }
+            }}
+          />
+          {topicSuggestions.length > 0 && (
+            <div
+              style={{
+                position: "absolute",
+                top: "calc(100% + 6px)",
+                left: 0,
+                right: 0,
+                zIndex: 30,
+                background: "#111418",
+                border: "1px solid #1E2530",
+                borderRadius: 10,
+                overflow: "hidden",
+              }}
+            >
+              {topicSuggestions.map((topic) => (
+                <button
+                  key={topic.id}
+                  onClick={() => {
+                    setActiveTopic(topic.id);
+                    setTopicQuery("");
+                  }}
+                  style={{
+                    width: "100%",
+                    textAlign: "left",
+                    background: "transparent",
+                    border: "none",
+                    borderBottom: "1px solid #1E2530",
+                    padding: "8px 10px",
+                    color: "#C8D3E0",
+                    cursor: "pointer",
+                    fontSize: 12,
+                  }}
+                >
+                  <span style={{ color: topic.color, fontFamily: "var(--font-mono)", marginRight: 8 }}>#{topic.id}</span>
+                  {cleanTopicName(topic.name)}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div
+          style={{
+            marginTop: 10,
+            border: "1px solid var(--border)",
+            borderRadius: 10,
+            background: "linear-gradient(90deg, rgba(29,158,117,0.08), rgba(127,119,221,0.06))",
+            padding: "8px 10px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 8,
+            flexWrap: "wrap",
+          }}
+        >
+          <span style={{ fontSize: 11, color: "var(--text-soft)", fontFamily: "var(--font-mono)" }}>
+            Click a node label or bottom chip to scope the narrative, then open Timeline, Stance, or Posts Explorer.
+          </span>
+          <div style={{ display: "flex", gap: 6 }}>
+            <button className="chip" style={{ border: "none", cursor: "pointer" }} onClick={() => router.push("/posts")}>Posts explorer</button>
+            <button className="chip" style={{ border: "none", cursor: "pointer" }} onClick={() => router.push("/chat")}>Ask Signal</button>
+          </div>
+        </div>
       </div>
 
       {/* ── Canvas + legend layout ─────────────────────────────────── */}

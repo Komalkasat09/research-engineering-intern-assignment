@@ -144,6 +144,7 @@ export default function ActiveTopicPanel({ clusters }: Props) {
       {/* Quick links */}
       <div style={{ padding: "8px 12px", display: "flex", flexDirection: "column", gap: 4 }}>
         {[
+          { label: "view posts →",      path: `/posts?topic_id=${cluster.id}` },
           { label: "view timeline →",   path: "/timeline" },
           { label: "view stance →",     path: "/stance" },
           { label: "ask Signal →",      path: "/chat" },

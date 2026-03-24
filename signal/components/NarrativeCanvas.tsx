@@ -35,7 +35,7 @@ const POINT_RADIUS   = 3;     // base radius in canvas pixels
 const POINT_ALPHA    = 0.75;  // default alpha
 const DIM_ALPHA      = 0.08;  // alpha for non-active-topic points
 const ACTIVE_ALPHA   = 0.90;  // alpha for active-topic points
-const HOVER_RADIUS   = 12;    // px — how close cursor must be to register hover
+const HOVER_RADIUS   = 18;    // px — how close cursor must be to register hover/click
 const MIN_ZOOM       = 0.4;
 const MAX_ZOOM       = 12;
 const ZOOM_SPEED     = 0.001;
@@ -122,6 +122,7 @@ export default function NarrativeCanvas({ width, height }: NarrativeCanvasProps)
   const { activeTopic, setActiveTopic, setMeta } = useSignalStore();
   const activeTopicRef = useRef(activeTopic);
   activeTopicRef.current = activeTopic;
+  const suppressNextCanvasClick = useRef(false);
 
   // ── Apply alpha based on active topic ──────────────────────────────────────
   const applyAlpha = useCallback((active: number | null) => {
@@ -167,6 +168,11 @@ export default function NarrativeCanvas({ width, height }: NarrativeCanvasProps)
   // ── Click handler — select cluster by centroid proximity ─────────────────
   const handleCanvasClick = useCallback(
     (e: MouseEvent) => {
+      if (suppressNextCanvasClick.current) {
+        suppressNextCanvasClick.current = false;
+        return;
+      }
+
       if (!canvasRef.current) return;
       const rect  = canvasRef.current.getBoundingClientRect();
       const cx    = e.clientX - rect.left;
@@ -316,12 +322,14 @@ export default function NarrativeCanvas({ width, height }: NarrativeCanvasProps)
 
         pill.x = cx - lw / 2;
         pill.y = cy - lh / 2;
-        pill.interactive = true;
+        pill.eventMode   = "static";
         pill.cursor      = "pointer";
+        pill.hitArea     = new PIXI.Rectangle(0, 0, lw, lh);
 
         // Click label → set topic filter
-        pill.on("pointerdown", (ev: PIXI.FederatedPointerEvent) => {
+        pill.on("pointertap", (ev: PIXI.FederatedPointerEvent) => {
           ev.stopPropagation();
+          suppressNextCanvasClick.current = true;
           const current = activeTopicRef.current;
           setActiveTopic(current === cluster.id ? null : cluster.id);
         });

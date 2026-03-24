@@ -40,6 +40,7 @@ const NAV_SECTIONS: { title: string; items: NavItem[] }[] = [
     title: "Investigate",
     items: [
       { href: "/chat",        label: "Ask Signal",            dot: "coral" },
+      { href: "/posts",       label: "Posts explorer",        dot: "teal" },
       { href: "/benchmark",   label: "Benchmark",             dot: "amber" },
     ],
   },
