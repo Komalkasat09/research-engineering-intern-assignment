@@ -21,7 +21,7 @@ export const NAV_ITEMS = [
   {
     section: "Analysis",
     items: [
-      { href: "/analysis/lifecycle", label: "Narrative lifecycle",   dot: "teal",   description: "Origin to mutation storyline" },
+      { href: "/lifecycle", label: "Narrative lifecycle",   dot: "coral", description: "Sentiment + toxicity arc" },
       { href: "/analysis/livefeed",  label: "Live feed injector",    dot: "coral",  description: "Real-time Reddit post mapping" },
       { href: "/stance",      label: "Stance river",          dot: "amber",  description: "Pro/con over time" },
       { href: "/signals",     label: "Coord. behavior",       dot: "purple", description: "Synchronized posting" },

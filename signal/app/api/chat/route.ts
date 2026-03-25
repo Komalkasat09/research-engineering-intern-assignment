@@ -25,15 +25,26 @@
  *   3. Install: npm install faiss-node
  */
 
-import { streamText } from "ai";
-import { createGroq } from "@ai-sdk/groq";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import fs from "fs";
 import path from "path";
 import { allowSyntheticData, missingDataResponse } from "@/lib/dataMode";
+import { getGroqApiKeys, withGroqKeyRotation } from "@/lib/groqRotator";
 
 export const maxDuration = 30;  // Vercel function timeout
+
+const CHAT_MODEL_CANDIDATES = [
+  process.env.GROQ_MODEL_CHAT,
+  "llama-3.3-70b-versatile",
+  "llama3-70b-8192",
+].filter((m): m is string => Boolean(m && m.trim()));
+
+function isModelDecommissionedError(status: number, body: string): boolean {
+  if (status !== 400) return false;
+  const text = body.toLowerCase();
+  return text.includes("model_decommissioned") || text.includes("decommissioned");
+}
 
 // ── Rate limiting ─────────────────────────────────────────────────────────────
 // Simple in-memory rate limiter. For production, use Upstash Redis.
@@ -335,12 +346,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
 
-  // Check for API key
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) {
+  // Check for API key(s)
+  if (!getGroqApiKeys().length) {
     return NextResponse.json(
       {
-        error: "GROQ_API_KEY not set. Get a free key at console.groq.com",
+        error: "GROQ_API_KEY not set. Add GROQ_API_KEY (or GROQ_API_KEY_2..N) in .env.local",
       },
       { status: 500 }
     );
@@ -407,28 +417,66 @@ ${contextBlock}
 
 Remaining rate limit for this session: ${remaining} requests.`;
 
-  // Create Groq client and stream response
+  // Request Groq completion with API key + model failover.
   try {
-    const groq = createGroq({ apiKey: process.env.GROQ_API_KEY });
+    const completionText = await withGroqKeyRotation(async (apiKey) => {
+      let lastError = "";
 
-    const result = await streamText({
-      model:           groq("llama-3.3-70b-versatile"),
-      system:          augmentedSystem,
-      messages:        (messages as Parameters<typeof streamText>[0]["messages"])!,
-      maxOutputTokens: 1200,
-      temperature:     0.25,
+      for (let i = 0; i < CHAT_MODEL_CANDIDATES.length; i++) {
+        const model = CHAT_MODEL_CANDIDATES[i]!;
+        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model,
+            messages: [
+              { role: "system", content: augmentedSystem },
+              ...messages.map((m) => ({ role: m.role, content: m.content })),
+            ],
+            temperature: 0.25,
+            max_tokens: 1200,
+          }),
+        });
+
+        if (response.ok) {
+          const data = (await response.json()) as {
+            choices?: Array<{ message?: { content?: string } }>;
+          };
+          return data.choices?.[0]?.message?.content?.trim() ?? "";
+        }
+
+        const errData = await response.text();
+        lastError = `Groq API error: ${response.status} ${errData}`;
+
+        if (response.status === 429) {
+          throw new Error(lastError);
+        }
+
+        const hasFallback = i < CHAT_MODEL_CANDIDATES.length - 1;
+        if (hasFallback && isModelDecommissionedError(response.status, errData)) {
+          continue;
+        }
+
+        throw new Error(lastError);
+      }
+
+      throw new Error(lastError || "Groq API error: No model candidates succeeded");
     });
 
-    const streamedResponse = result.toTextStreamResponse();
-    const headers = new Headers(streamedResponse.headers);
+    const headers = new Headers({
+      "content-type": "text/plain; charset=utf-8",
+    });
     headers.set("x-signal-suspicion-flag", analystAlert.triggered ? "1" : "0");
     if (analystAlert.triggered) {
       headers.set("x-signal-suspicion-topic", encodeURIComponent(analystAlert.topic));
       headers.set("x-signal-suspicion-date", analystAlert.date);
     }
 
-    return new Response(streamedResponse.body, {
-      status: streamedResponse.status,
+    return new Response(completionText, {
+      status: 200,
       headers,
     });
   } catch (err) {

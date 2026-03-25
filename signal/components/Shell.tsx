@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
+import type { CSSProperties } from "react";
 import type { DatasetMeta } from "@/types";
 import { useSignalStore } from "@/lib/store";
 import AnalystRail from "@/components/AnalystRail";
@@ -28,10 +29,10 @@ const NAV_SECTIONS: { title: string; items: NavItem[] }[] = [
   {
     title: "Analysis",
     items: [
-      { href: "/analysis/lifecycle", label: "Narrative lifecycle",   dot: "teal" },
+      { href: "/lifecycle", label: "Narrative lifecycle",   dot: "coral" },
       { href: "/analysis/livefeed",  label: "Live feed injector",    dot: "coral" },
-      { href: "/stance",      label: "Stance river",          dot: "amber" },
-      { href: "/signals",     label: "Coord. behavior",       dot: "purple" },
+      // { href: "/stance",      label: "Stance river",          dot: "amber" },
+      // { href: "/signals",     label: "Coord. behavior",       dot: "purple" },
       { href: "/fingerprint", label: "Narrative fingerprint", dot: "coral", badge: "AI" },
     ],
   },
@@ -40,7 +41,7 @@ const NAV_SECTIONS: { title: string; items: NavItem[] }[] = [
     items: [
       { href: "/chat",        label: "Ask Signal",            dot: "coral" },
       { href: "/posts",       label: "Posts explorer",        dot: "teal" },
-      { href: "/benchmark",   label: "Benchmark",             dot: "amber" },
+      // { href: "/benchmark",   label: "Benchmark",             dot: "amber" },
     ],
   },
 ];
@@ -61,38 +62,10 @@ const ACTIVE_CLASS: Record<string, string> = {
   coral:  "",
 };
 
-// ─── Time range chips ─────────────────────────────────────────────────────────
-const RANGES = ["Jul 2024", "Aug", "Sep", "Oct", "Nov", "Dec 2024", "Jan 2025", "All"];
-
 function toUnix(value: string, endOfDay = false): number {
   const dt = new Date(value);
   if (endOfDay) dt.setUTCHours(23, 59, 59, 0);
   return Math.floor(dt.getTime() / 1000);
-}
-
-function resolveRange(range: string, meta: DatasetMeta | null): { start: number; end: number } {
-  const mapped: Record<string, { start: string; end: string }> = {
-    "Jul 2024": { start: "2024-07-01", end: "2024-07-31" },
-    "Aug": { start: "2024-08-01", end: "2024-08-31" },
-    "Sep": { start: "2024-09-01", end: "2024-09-30" },
-    "Oct": { start: "2024-10-01", end: "2024-10-31" },
-    "Nov": { start: "2024-11-01", end: "2024-11-30" },
-    "Dec 2024": { start: "2024-12-01", end: "2024-12-31" },
-    "Jan 2025": { start: "2025-01-01", end: "2025-01-31" },
-  };
-
-  if (range === "All") {
-    return {
-      start: toUnix(meta?.date_start ?? "2024-07-01"),
-      end: toUnix(meta?.date_end ?? "2025-02-28", true),
-    };
-  }
-
-  const value = mapped[range] ?? mapped["Jul 2024"];
-  return {
-    start: toUnix(value.start),
-    end: toUnix(value.end, true),
-  };
 }
 
 export default function Shell({ children }: { children: React.ReactNode }) {
@@ -102,11 +75,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
   const {
     activeTopic,
     setActiveTopic,
-    activeRange,
-    setActiveRange,
     setDateRange,
-    platforms,
-    togglePlatform,
     analystRailOpen,
     setAnalystRailOpen,
     opsTheme,
@@ -116,10 +85,15 @@ export default function Shell({ children }: { children: React.ReactNode }) {
   } = useSignalStore();
 
   const safeActiveTopic = mounted ? activeTopic : null;
-  const safeActiveRange = mounted ? activeRange : "All";
-  const safePlatforms = mounted ? platforms : ["reddit", "twitter"];
   const safeAnalystRailOpen = mounted ? analystRailOpen : true;
   const safeOpsTheme = mounted ? opsTheme : false;
+  const topbarButtonStyle: CSSProperties = {
+    border: "1px solid var(--border-2)",
+    background: "rgba(16, 24, 32, 0.45)",
+    borderRadius: 999,
+    padding: "4px 12px",
+    cursor: "pointer",
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -139,9 +113,11 @@ export default function Shell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!mounted) return;
-    const { start, end } = resolveRange(activeRange, meta);
-    setDateRange(start, end);
-  }, [activeRange, meta, mounted, setDateRange]);
+    setDateRange(
+      toUnix(meta?.date_start ?? "2024-07-01"),
+      toUnix(meta?.date_end ?? "2025-02-28", true),
+    );
+  }, [meta, mounted, setDateRange]);
 
   useEffect(() => {
     if (!mounted) return;
@@ -304,20 +280,6 @@ export default function Shell({ children }: { children: React.ReactNode }) {
           </div>
         )}
 
-        {/* Time range chips */}
-        <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
-          {RANGES.map((r) => (
-            <button
-              key={r}
-              className={clsx("chip", safeActiveRange === r && "active")}
-              onClick={() => setActiveRange(r as typeof activeRange)}
-              style={{ border: "none", background: "transparent" }}
-            >
-              {r}
-            </button>
-          ))}
-        </div>
-
         <div
           style={{
             width: 1,
@@ -327,30 +289,27 @@ export default function Shell({ children }: { children: React.ReactNode }) {
           }}
         />
 
-        {/* Platform badges */}
-        <div style={{ display: "flex", gap: 5 }}>
-          <button
-            className={clsx("chip", safePlatforms.includes("reddit") && "active")}
-            onClick={() => togglePlatform("reddit")}
-            style={{ border: "none", background: "transparent" }}
-            aria-label="Toggle Reddit data"
-          >
-            Reddit
-          </button>
-          <button
-            className={clsx("chip", safePlatforms.includes("twitter") && "active")}
-            onClick={() => togglePlatform("twitter")}
-            style={{ border: "none", background: "transparent" }}
-            aria-label="Toggle Twitter/X data"
-          >
-            Twitter/X
-          </button>
+        {/* Platform labels */}
+        <div
+          style={{
+            display: "flex",
+            gap: 8,
+            alignItems: "center",
+            fontSize: 12,
+            color: "var(--muted)",
+            fontFamily: "var(--font-mono)",
+          }}
+          aria-label="Active data platforms"
+        >
+          <span>Reddit</span>
+          <span style={{ color: "var(--border-2)" }}>·</span>
+          <span>Twitter/X</span>
         </div>
 
         <button
           className={clsx("chip", safeAnalystRailOpen && "active")}
           onClick={() => setAnalystRailOpen(!analystRailOpen)}
-          style={{ border: "none", background: "transparent" }}
+          style={topbarButtonStyle}
           aria-label="Toggle analyst rail"
         >
           Rail
@@ -359,7 +318,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
         <button
           className={clsx("chip", safeOpsTheme && "active")}
           onClick={toggleOpsTheme}
-          style={{ border: "none", background: "transparent" }}
+          style={topbarButtonStyle}
           aria-label="Toggle ops theme"
         >
           Ops mode

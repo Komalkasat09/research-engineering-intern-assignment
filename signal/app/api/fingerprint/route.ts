@@ -8,12 +8,23 @@
  * Model: Gemini 2.0 Flash, temperature 0.4 (more creative than the chatbot)
  */
 
-import { streamText } from "ai";
-import { createGroq } from "@ai-sdk/groq";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { getGroqApiKeys, withGroqKeyRotation } from "@/lib/groqRotator";
 
 export const maxDuration = 30;
+
+const FINGERPRINT_MODEL_CANDIDATES = [
+  process.env.GROQ_MODEL_FINGERPRINT,
+  "llama-3.3-70b-versatile",
+  "llama3-70b-8192",
+].filter((m): m is string => Boolean(m && m.trim()));
+
+function isModelDecommissionedError(status: number, body: string): boolean {
+  if (status !== 400) return false;
+  const text = body.toLowerCase();
+  return text.includes("model_decommissioned") || text.includes("decommissioned");
+}
 
 const archetypes = [
   {
@@ -83,10 +94,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
 
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) {
+  if (!getGroqApiKeys().length) {
     return NextResponse.json(
-      { error: "GROQ_API_KEY not set. Get a free key at console.groq.com" },
+      { error: "GROQ_API_KEY not set. Add GROQ_API_KEY (or GROQ_API_KEY_2..N) in .env.local" },
       { status: 500 }
     );
   }
@@ -94,17 +104,57 @@ export async function POST(req: NextRequest) {
   const userPrompt = `NARRATIVE: ${query}${topicId !== undefined ? `\nCLUSTER: #${topicId}` : ""}`;
 
   try {
-    const groq = createGroq({ apiKey: process.env.GROQ_API_KEY ?? "" });
+    const completionText = await withGroqKeyRotation(async (apiKey) => {
+      let lastError = "";
 
-    const result = await streamText({
-      model:       groq("llama-3.3-70b-versatile"),
-      system:      SYSTEM_PROMPT,
-      prompt:      userPrompt,
-      maxOutputTokens: 1400,
-      temperature: 0.4,
+      for (let i = 0; i < FINGERPRINT_MODEL_CANDIDATES.length; i++) {
+        const model = FINGERPRINT_MODEL_CANDIDATES[i]!;
+        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model,
+            messages: [
+              { role: "system", content: SYSTEM_PROMPT },
+              { role: "user", content: userPrompt },
+            ],
+            max_tokens: 1400,
+            temperature: 0.4,
+          }),
+        });
+
+        if (response.ok) {
+          const data = (await response.json()) as {
+            choices?: Array<{ message?: { content?: string } }>;
+          };
+          return data.choices?.[0]?.message?.content?.trim() ?? "";
+        }
+
+        const errData = await response.text();
+        lastError = `Groq API error: ${response.status} ${errData}`;
+
+        if (response.status === 429) {
+          throw new Error(lastError);
+        }
+
+        const hasFallback = i < FINGERPRINT_MODEL_CANDIDATES.length - 1;
+        if (hasFallback && isModelDecommissionedError(response.status, errData)) {
+          continue;
+        }
+
+        throw new Error(lastError);
+      }
+
+      throw new Error(lastError || "Groq API error: No model candidates succeeded");
     });
 
-    return result.toTextStreamResponse();
+    return new Response(completionText, {
+      status: 200,
+      headers: { "content-type": "text/plain; charset=utf-8" },
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     console.error("[/api/fingerprint] Groq error:", message);

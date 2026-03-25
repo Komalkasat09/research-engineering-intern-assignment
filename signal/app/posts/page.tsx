@@ -293,7 +293,7 @@ function PostsPageContent() {
           </select>
           <button
             className="chip"
-            style={{ border: "none", cursor: "pointer" }}
+            style={{ cursor: "pointer" }}
             onClick={() => {
               setPage(0);
               runSearch();
@@ -303,7 +303,7 @@ function PostsPageContent() {
           </button>
           <button
             className="chip"
-            style={{ border: "none", cursor: "pointer" }}
+            style={{ cursor: "pointer" }}
             onClick={() => {
               setQuery("");
               setSubreddit("");
@@ -323,7 +323,7 @@ function PostsPageContent() {
           <span style={{ fontSize: 11, color: "var(--amber)", fontFamily: "var(--font-mono)" }}>
             No results in current topic scope, but {data?.total_all_topics ?? 0} matches exist across all topics.
           </span>
-          <button className="chip active" style={{ border: "none", cursor: "pointer" }} onClick={() => setActiveTopic(null)}>
+          <button className="chip active" style={{ cursor: "pointer" }} onClick={() => setActiveTopic(null)}>
             Clear topic scope
           </button>
         </div>
@@ -343,7 +343,7 @@ function PostsPageContent() {
               <button
                 key={opt.id}
                 className={`chip ${mode === opt.id ? "active" : ""}`}
-                style={{ border: "none", cursor: "pointer" }}
+                style={{ cursor: "pointer" }}
                 onClick={() => setMode(opt.id)}
               >
                 {opt.label}
@@ -402,7 +402,7 @@ function PostsPageContent() {
               <div style={{ marginTop: 8, display: "flex", justifyContent: "flex-end" }}>
                 <button
                   className="chip"
-                  style={{ border: "none", cursor: "pointer" }}
+                  style={{ cursor: "pointer" }}
                   onClick={(e) => {
                     e.stopPropagation();
                     const prompt = toAskSignalPrefill(p);
@@ -428,8 +428,8 @@ function PostsPageContent() {
               showing {page * limit + 1}-{page * limit + (data?.returned ?? 0)} of {data?.total ?? 0}
             </span>
             <div style={{ display: "flex", gap: 6 }}>
-              <button className="chip" style={{ border: "none", cursor: page === 0 ? "not-allowed" : "pointer", opacity: page === 0 ? 0.4 : 1 }} disabled={page === 0} onClick={() => setPage((p) => Math.max(0, p - 1))}>Prev</button>
-              <button className="chip" style={{ border: "none", cursor: data?.has_more ? "pointer" : "not-allowed", opacity: data?.has_more ? 1 : 0.4 }} disabled={!data?.has_more} onClick={() => setPage((p) => p + 1)}>Next</button>
+              <button className="chip" style={{ cursor: page === 0 ? "not-allowed" : "pointer", opacity: page === 0 ? 0.4 : 1 }} disabled={page === 0} onClick={() => setPage((p) => Math.max(0, p - 1))}>Prev</button>
+              <button className="chip" style={{ cursor: data?.has_more ? "pointer" : "not-allowed", opacity: data?.has_more ? 1 : 0.4 }} disabled={!data?.has_more} onClick={() => setPage((p) => p + 1)}>Next</button>
             </div>
           </div>
         )}
@@ -441,7 +441,7 @@ function PostsPageContent() {
             <div style={{ fontSize: 11, color: "var(--dim)", fontFamily: "var(--font-mono)" }}>
               Selected post [{selected.post_id}] · topic #{selected.topic_id}
             </div>
-            <button className="chip" style={{ border: "none", cursor: "pointer" }} onClick={() => setSelected(null)}>Close</button>
+            <button className="chip" style={{ cursor: "pointer" }} onClick={() => setSelected(null)}>Close</button>
           </div>
           <div style={{ marginTop: 8, fontSize: 13, color: "var(--text-soft)", lineHeight: 1.7, fontFamily: "var(--font-serif)" }}>
             {selected.text}
@@ -452,7 +452,7 @@ function PostsPageContent() {
           <div style={{ marginTop: 10, display: "flex", justifyContent: "flex-end" }}>
             <button
               className="chip"
-              style={{ border: "none", cursor: "pointer" }}
+              style={{ cursor: "pointer" }}
               onClick={() => {
                 const prompt = toAskSignalPrefill(selected);
                 router.push(`/chat?q=${encodeURIComponent(prompt)}`);

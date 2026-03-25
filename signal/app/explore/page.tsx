@@ -373,10 +373,32 @@ export default function ExplorePage() {
                     score {t.rank_reason.score.toLocaleString()} · velocity {t.rank_reason.velocity_spike.toFixed(3)} · spread {t.rank_reason.spread_count} · posts {t.rank_reason.post_count.toLocaleString()}
                   </div>
                   <div style={{ marginTop: 6, display: "flex", gap: 6 }}>
-                    <button className="chip" style={{ border: "none", cursor: "pointer" }} onClick={() => selectTopic(t.topic_id, "trends")}>Filter</button>
                     <button
                       className="chip"
-                      style={{ border: "none", cursor: "pointer" }}
+                      style={{
+                        border: "1px solid var(--border-2)",
+                        background: "rgba(29, 158, 117, 0.1)",
+                        color: "var(--teal)",
+                        borderRadius: 999,
+                        padding: "4px 10px",
+                        cursor: "pointer",
+                        fontSize: 11,
+                      }}
+                      onClick={() => selectTopic(t.topic_id, "trends")}
+                    >
+                      Filter
+                    </button>
+                    <button
+                      className="chip"
+                      style={{
+                        border: "1px solid rgba(127,119,221,0.45)",
+                        background: "rgba(127,119,221,0.14)",
+                        color: "#B8B2FF",
+                        borderRadius: 999,
+                        padding: "4px 10px",
+                        cursor: "pointer",
+                        fontSize: 11,
+                      }}
                       onClick={() => {
                         selectTopic(t.topic_id, "trends");
                         setSpreadOpen(true);
@@ -554,8 +576,8 @@ export default function ExplorePage() {
                 Click a node label or bottom chip to scope the narrative, then open Timeline, Stance, or Posts Explorer.
               </span>
               <div style={{ display: "flex", gap: 6 }}>
-                <button className="chip" style={{ border: "none", cursor: "pointer" }} onClick={() => router.push("/posts")}>Posts explorer</button>
-                <button className="chip" style={{ border: "none", cursor: "pointer" }} onClick={() => router.push("/chat")}>Ask Signal</button>
+                <button className="chip" style={{ cursor: "pointer" }} onClick={() => router.push("/posts")}>Posts explorer</button>
+                <button className="chip" style={{ cursor: "pointer" }} onClick={() => router.push("/chat")}>Ask Signal</button>
               </div>
             </div>
 
@@ -622,7 +644,7 @@ export default function ExplorePage() {
                 <span style={{ fontSize: 12, color: "var(--text)", fontFamily: "var(--font-mono)" }}>
                   Spread graph {activeTopic !== null ? `· topic #${activeTopic}` : "· all topics"}
                 </span>
-                <button className="chip" style={{ border: "none", cursor: "pointer" }} onClick={() => setSpreadOpen(false)}>Close</button>
+                <button className="chip" style={{ cursor: "pointer" }} onClick={() => setSpreadOpen(false)}>Close</button>
               </div>
               <div style={{ flex: 1, minHeight: 0, padding: 10 }}>
                 <SpreadGraph width={1040} height={640} />

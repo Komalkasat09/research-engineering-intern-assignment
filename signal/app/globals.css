@@ -214,6 +214,38 @@ html, body {
   color: var(--teal);
 }
 
+/* Shared chip actions */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 4px 12px;
+  border: 1px solid var(--border-2);
+  border-radius: 999px;
+  background: rgba(14, 20, 28, 0.55);
+  color: var(--text-soft);
+  font-size: 12px;
+  font-family: var(--font-mono);
+  line-height: 1;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: all var(--transition);
+}
+
+.chip:hover {
+  border-color: var(--muted);
+  color: var(--text);
+  background: rgba(20, 29, 40, 0.75);
+}
+
+.chip.active {
+  border-color: var(--teal-dim);
+  background: var(--teal-glow);
+  color: var(--teal);
+}
+
 /* Dot indicator */
 .dot {
   width: 6px;

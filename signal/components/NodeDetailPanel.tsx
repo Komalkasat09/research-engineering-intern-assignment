@@ -399,7 +399,7 @@ export default function NodeDetailPanel({
                 router.push("/map");
               }}
               className="chip"
-              style={{ border: "none", background: "transparent", cursor: "pointer" }}
+              style={{ cursor: "pointer" }}
             >
               Map
             </button>
@@ -416,7 +416,7 @@ export default function NodeDetailPanel({
                 router.push("/stance");
               }}
               className="chip"
-              style={{ border: "none", background: "transparent", cursor: "pointer" }}
+              style={{ cursor: "pointer" }}
             >
               Stance
             </button>

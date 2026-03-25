@@ -21,6 +21,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import path from "path";
 import fs from "fs";
+import { getGroqApiKeys, withGroqKeyRotation } from "@/lib/groqRotator";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -263,8 +264,7 @@ async function classifyPostsWithGroq(
   posts: RedditPost[],
   clusters: TopicCluster[]
 ): Promise<ClusterAssignment[]> {
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) {
+  if (!getGroqApiKeys().length) {
     throw new Error("GROQ_API_KEY environment variable not set");
   }
 
@@ -292,53 +292,55 @@ For each post, return a JSON object with:
 
   const userPrompt = `Classify these posts:\n\n${postsAsJson}\n\nReturn a JSON array of classification objects, one per post, in the same order as the input.`;
 
-  let result: GroqMessage | null = null;
-  let lastError = "";
+  const result = await withGroqKeyRotation(async (apiKey) => {
+    let lastError = "";
 
-  for (let i = 0; i < GROQ_MODEL_CANDIDATES.length; i++) {
-    const model = GROQ_MODEL_CANDIDATES[i]!;
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          {
-            role: "system",
-            content: systemPrompt,
-          },
-          {
-            role: "user",
-            content: userPrompt,
-          },
-        ],
-        temperature: 0.3,
-        max_tokens: 4096,
-      }),
-    });
+    for (let i = 0; i < GROQ_MODEL_CANDIDATES.length; i++) {
+      const model = GROQ_MODEL_CANDIDATES[i]!;
+      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            {
+              role: "system",
+              content: systemPrompt,
+            },
+            {
+              role: "user",
+              content: userPrompt,
+            },
+          ],
+          temperature: 0.3,
+          max_tokens: 4096,
+        }),
+      });
 
-    if (response.ok) {
-      result = await response.json() as GroqMessage;
-      break;
+      if (response.ok) {
+        return (await response.json()) as GroqMessage;
+      }
+
+      const errData = await response.text();
+      lastError = `Groq API error: ${response.status} ${errData}`;
+
+      if (response.status === 429) {
+        throw new Error(lastError);
+      }
+
+      const hasFallback = i < GROQ_MODEL_CANDIDATES.length - 1;
+      if (hasFallback && isModelDecommissionedError(response.status, errData)) {
+        continue;
+      }
+
+      throw new Error(lastError);
     }
 
-    const errData = await response.text();
-    lastError = `Groq API error: ${response.status} ${errData}`;
-
-    const hasFallback = i < GROQ_MODEL_CANDIDATES.length - 1;
-    if (hasFallback && isModelDecommissionedError(response.status, errData)) {
-      continue;
-    }
-
-    throw new Error(lastError);
-  }
-
-  if (!result) {
     throw new Error(lastError || "Groq API error: No model candidates succeeded");
-  }
+  });
 
   const textContent = result.choices?.[0]?.message?.content ?? "";
 

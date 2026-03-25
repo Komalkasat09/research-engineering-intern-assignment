@@ -317,8 +317,8 @@ export default function MapPage() {
             Click a node label or bottom chip to scope the narrative, then open Timeline, Stance, or Posts Explorer.
           </span>
           <div style={{ display: "flex", gap: 6 }}>
-            <button className="chip" style={{ border: "none", cursor: "pointer" }} onClick={() => router.push("/posts")}>Posts explorer</button>
-            <button className="chip" style={{ border: "none", cursor: "pointer" }} onClick={() => router.push("/chat")}>Ask Signal</button>
+            <button className="chip" style={{ cursor: "pointer" }} onClick={() => router.push("/posts")}>Posts explorer</button>
+            <button className="chip" style={{ cursor: "pointer" }} onClick={() => router.push("/chat")}>Ask Signal</button>
           </div>
         </div>
       </div>

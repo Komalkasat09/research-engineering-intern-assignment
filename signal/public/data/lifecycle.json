@@ -1,0 +1,854 @@
+{
+  "lifecycle": [
+    {
+      "topic_id": 0,
+      "avg_sentiment": 0.071,
+      "avg_toxicity": 0.118,
+      "phases": [
+        {
+          "phase": "Emergence",
+          "post_count": 256,
+          "date_start": "2024-07",
+          "date_end": "2024-12",
+          "avg_sentiment": 0.023,
+          "avg_toxicity": 0.127
+        },
+        {
+          "phase": "Growth",
+          "post_count": 256,
+          "date_start": "2024-12",
+          "date_end": "2025-01",
+          "avg_sentiment": 0.099,
+          "avg_toxicity": 0.148
+        },
+        {
+          "phase": "Peak",
+          "post_count": 256,
+          "date_start": "2025-01",
+          "date_end": "2025-02",
+          "avg_sentiment": 0.086,
+          "avg_toxicity": 0.115
+        },
+        {
+          "phase": "Saturation",
+          "post_count": 256,
+          "date_start": "2025-02",
+          "date_end": "2025-02",
+          "avg_sentiment": 0.078,
+          "avg_toxicity": 0.081
+        }
+      ],
+      "monthly": [
+        {
+          "month": "2024-07",
+          "post_count": 2,
+          "avg_sentiment": 0.384,
+          "avg_toxicity": 0.001,
+          "max_toxicity": 0.001
+        },
+        {
+          "month": "2024-08",
+          "post_count": 2,
+          "avg_sentiment": 0.429,
+          "avg_toxicity": 0.001,
+          "max_toxicity": 0.001
+        },
+        {
+          "month": "2024-09",
+          "post_count": 3,
+          "avg_sentiment": -0.479,
+          "avg_toxicity": 0.357,
+          "max_toxicity": 0.917
+        },
+        {
+          "month": "2024-10",
+          "post_count": 3,
+          "avg_sentiment": -0.087,
+          "avg_toxicity": 0.001,
+          "max_toxicity": 0.002
+        },
+        {
+          "month": "2024-11",
+          "post_count": 145,
+          "avg_sentiment": -0.0,
+          "avg_toxicity": 0.097,
+          "max_toxicity": 0.998
+        },
+        {
+          "month": "2024-12",
+          "post_count": 257,
+          "avg_sentiment": 0.065,
+          "avg_toxicity": 0.17,
+          "max_toxicity": 0.998
+        },
+        {
+          "month": "2025-01",
+          "post_count": 282,
+          "avg_sentiment": 0.107,
+          "avg_toxicity": 0.128,
+          "max_toxicity": 0.998
+        },
+        {
+          "month": "2025-02",
+          "post_count": 330,
+          "avg_sentiment": 0.079,
+          "avg_toxicity": 0.078,
+          "max_toxicity": 0.998
+        }
+      ],
+      "most_toxic_post": {
+        "text": "Garlic herb Bread crumbed on most of it because SOME PEOPLE ARE FUCKING PANSYS AND WONT EAT THE BREAD CRUMBS ON THE FUCKING MAC AND CHEESE. FUCK!",
+        "author": "t-o-m-u-s-a",
+        "subreddit": "worldpolitics",
+        "score": 42,
+        "date": "2024-11-28",
+        "toxicity": 0.998,
+        "sentiment": -0.953
+      },
+      "most_viral_post": {
+        "text": "\ud83d\udea8This Six-Word Declaration Is Exploding on Twitter\ud83d\udea8: 250,000 Likes in Hours",
+        "author": "Afterswiftie",
+        "subreddit": "democrats",
+        "score": 27068,
+        "date": "2025-02-04",
+        "toxicity": 0.002,
+        "sentiment": 0.0
+      }
+    },
+    {
+      "topic_id": 1,
+      "avg_sentiment": -0.026,
+      "avg_toxicity": 0.016,
+      "phases": [
+        {
+          "phase": "Emergence",
+          "post_count": 179,
+          "date_start": "2024-08",
+          "date_end": "2025-01",
+          "avg_sentiment": -0.021,
+          "avg_toxicity": 0.012
+        },
+        {
+          "phase": "Growth",
+          "post_count": 179,
+          "date_start": "2025-01",
+          "date_end": "2025-01",
+          "avg_sentiment": 0.022,
+          "avg_toxicity": 0.012
+        },
+        {
+          "phase": "Peak",
+          "post_count": 179,
+          "date_start": "2025-01",
+          "date_end": "2025-02",
+          "avg_sentiment": -0.04,
+          "avg_toxicity": 0.024
+        },
+        {
+          "phase": "Saturation",
+          "post_count": 179,
+          "date_start": "2025-02",
+          "date_end": "2025-02",
+          "avg_sentiment": -0.063,
+          "avg_toxicity": 0.018
+        }
+      ],
+      "monthly": [
+        {
+          "month": "2024-08",
+          "post_count": 2,
+          "avg_sentiment": -0.305,
+          "avg_toxicity": 0.001,
+          "max_toxicity": 0.001
+        },
+        {
+          "month": "2024-09",
+          "post_count": 1,
+          "avg_sentiment": 0.0,
+          "avg_toxicity": 0.001,
+          "max_toxicity": 0.001
+        },
+        {
+          "month": "2024-11",
+          "post_count": 80,
+          "avg_sentiment": -0.024,
+          "avg_toxicity": 0.009,
+          "max_toxicity": 0.127
+        },
+        {
+          "month": "2024-12",
+          "post_count": 91,
+          "avg_sentiment": -0.015,
+          "avg_toxicity": 0.015,
+          "max_toxicity": 0.645
+        },
+        {
+          "month": "2025-01",
+          "post_count": 310,
+          "avg_sentiment": -0.009,
+          "avg_toxicity": 0.018,
+          "max_toxicity": 0.987
+        },
+        {
+          "month": "2025-02",
+          "post_count": 232,
+          "avg_sentiment": -0.05,
+          "avg_toxicity": 0.018,
+          "max_toxicity": 0.889
+        }
+      ],
+      "most_toxic_post": {
+        "text": "Has anyone read this book? Holy fuck the entire book turned me on!",
+        "author": "imanadultok",
+        "subreddit": "worldpolitics",
+        "score": 0,
+        "date": "2025-01-23",
+        "toxicity": 0.987,
+        "sentiment": 0.863
+      },
+      "most_viral_post": {
+        "text": "Exposing the ridiculous anti-socialist tactics of shrewd capitalists",
+        "author": "load1991",
+        "subreddit": "socialism",
+        "score": 3388,
+        "date": "2025-01-11",
+        "toxicity": 0.397,
+        "sentiment": -0.603
+      }
+    },
+    {
+      "topic_id": 2,
+      "avg_sentiment": -0.373,
+      "avg_toxicity": 0.084,
+      "phases": [
+        {
+          "phase": "Emergence",
+          "post_count": 155,
+          "date_start": "2024-07",
+          "date_end": "2025-01",
+          "avg_sentiment": -0.437,
+          "avg_toxicity": 0.12
+        },
+        {
+          "phase": "Growth",
+          "post_count": 156,
+          "date_start": "2025-01",
+          "date_end": "2025-02",
+          "avg_sentiment": -0.406,
+          "avg_toxicity": 0.068
+        },
+        {
+          "phase": "Peak",
+          "post_count": 156,
+          "date_start": "2025-02",
+          "date_end": "2025-02",
+          "avg_sentiment": -0.308,
+          "avg_toxicity": 0.083
+        },
+        {
+          "phase": "Saturation",
+          "post_count": 156,
+          "date_start": "2025-02",
+          "date_end": "2025-02",
+          "avg_sentiment": -0.343,
+          "avg_toxicity": 0.066
+        }
+      ],
+      "monthly": [
+        {
+          "month": "2024-07",
+          "post_count": 6,
+          "avg_sentiment": -0.635,
+          "avg_toxicity": 0.165,
+          "max_toxicity": 0.832
+        },
+        {
+          "month": "2024-08",
+          "post_count": 11,
+          "avg_sentiment": -0.392,
+          "avg_toxicity": 0.126,
+          "max_toxicity": 0.716
+        },
+        {
+          "month": "2024-09",
+          "post_count": 25,
+          "avg_sentiment": -0.398,
+          "avg_toxicity": 0.084,
+          "max_toxicity": 0.995
+        },
+        {
+          "month": "2024-10",
+          "post_count": 15,
+          "avg_sentiment": -0.409,
+          "avg_toxicity": 0.086,
+          "max_toxicity": 0.685
+        },
+        {
+          "month": "2024-11",
+          "post_count": 70,
+          "avg_sentiment": -0.476,
+          "avg_toxicity": 0.137,
+          "max_toxicity": 0.992
+        },
+        {
+          "month": "2024-12",
+          "post_count": 15,
+          "avg_sentiment": -0.339,
+          "avg_toxicity": 0.149,
+          "max_toxicity": 0.812
+        },
+        {
+          "month": "2025-01",
+          "post_count": 130,
+          "avg_sentiment": -0.426,
+          "avg_toxicity": 0.079,
+          "max_toxicity": 0.991
+        },
+        {
+          "month": "2025-02",
+          "post_count": 351,
+          "avg_sentiment": -0.327,
+          "avg_toxicity": 0.07,
+          "max_toxicity": 0.975
+        }
+      ],
+      "most_toxic_post": {
+        "text": "Isn't It funny the right thinks stochastic terrorism is real now? JD Vance thinks the rhetoric should be toned down because \"someone is gonna get hurt\". Oh, OH REALLY? Stop calling random lgbt people \"groomers\" Stop calling liberal demons. Stop calling immigrants rapists and human traffickers. AFTER",
+        "author": "Comfortable-Ebb-2859",
+        "subreddit": "Liberal",
+        "score": 103,
+        "date": "2024-09-17",
+        "toxicity": 0.995,
+        "sentiment": -0.917
+      },
+      "most_viral_post": {
+        "text": "The United States of America and the people Vs. Donald J. Trump, and the GOP party",
+        "author": "teddybear41",
+        "subreddit": "democrats",
+        "score": 16640,
+        "date": "2025-02-14",
+        "toxicity": 0.001,
+        "sentiment": 0.0
+      }
+    },
+    {
+      "topic_id": 3,
+      "avg_sentiment": -0.202,
+      "avg_toxicity": 0.034,
+      "phases": [
+        {
+          "phase": "Emergence",
+          "post_count": 127,
+          "date_start": "2024-07",
+          "date_end": "2025-02",
+          "avg_sentiment": -0.304,
+          "avg_toxicity": 0.037
+        },
+        {
+          "phase": "Growth",
+          "post_count": 127,
+          "date_start": "2025-02",
+          "date_end": "2025-02",
+          "avg_sentiment": -0.107,
+          "avg_toxicity": 0.035
+        },
+        {
+          "phase": "Peak",
+          "post_count": 127,
+          "date_start": "2025-02",
+          "date_end": "2025-02",
+          "avg_sentiment": -0.193,
+          "avg_toxicity": 0.033
+        },
+        {
+          "phase": "Saturation",
+          "post_count": 128,
+          "date_start": "2025-02",
+          "date_end": "2025-02",
+          "avg_sentiment": -0.204,
+          "avg_toxicity": 0.03
+        }
+      ],
+      "monthly": [
+        {
+          "month": "2024-07",
+          "post_count": 1,
+          "avg_sentiment": 0.0,
+          "avg_toxicity": 0.001,
+          "max_toxicity": 0.001
+        },
+        {
+          "month": "2024-08",
+          "post_count": 1,
+          "avg_sentiment": -0.769,
+          "avg_toxicity": 0.002,
+          "max_toxicity": 0.002
+        },
+        {
+          "month": "2024-09",
+          "post_count": 1,
+          "avg_sentiment": -0.841,
+          "avg_toxicity": 0.012,
+          "max_toxicity": 0.012
+        },
+        {
+          "month": "2024-11",
+          "post_count": 5,
+          "avg_sentiment": -0.406,
+          "avg_toxicity": 0.008,
+          "max_toxicity": 0.017
+        },
+        {
+          "month": "2024-12",
+          "post_count": 8,
+          "avg_sentiment": -0.131,
+          "avg_toxicity": 0.097,
+          "max_toxicity": 0.494
+        },
+        {
+          "month": "2025-01",
+          "post_count": 37,
+          "avg_sentiment": -0.297,
+          "avg_toxicity": 0.048,
+          "max_toxicity": 0.927
+        },
+        {
+          "month": "2025-02",
+          "post_count": 456,
+          "avg_sentiment": -0.191,
+          "avg_toxicity": 0.032,
+          "max_toxicity": 0.987
+        }
+      ],
+      "most_toxic_post": {
+        "text": "Have you been crying like a bitch over Elon Musk? Grow some balls",
+        "author": "Slainlion",
+        "subreddit": "Conservative",
+        "score": 1047,
+        "date": "2025-02-13",
+        "toxicity": 0.987,
+        "sentiment": -0.904
+      },
+      "most_viral_post": {
+        "text": "Elon Musk Says Team Behind CBS's '60 Minutes' Deserves 'A Long Prison Sentence'",
+        "author": "ObjectiveAd6551",
+        "subreddit": "politics",
+        "score": 33932,
+        "date": "2025-02-17",
+        "toxicity": 0.022,
+        "sentiment": 0.0
+      }
+    },
+    {
+      "topic_id": 4,
+      "avg_sentiment": -0.207,
+      "avg_toxicity": 0.021,
+      "phases": [
+        {
+          "phase": "Emergence",
+          "post_count": 95,
+          "date_start": "2024-09",
+          "date_end": "2025-02",
+          "avg_sentiment": -0.24,
+          "avg_toxicity": 0.022
+        },
+        {
+          "phase": "Growth",
+          "post_count": 95,
+          "date_start": "2025-02",
+          "date_end": "2025-02",
+          "avg_sentiment": -0.223,
+          "avg_toxicity": 0.012
+        },
+        {
+          "phase": "Peak",
+          "post_count": 95,
+          "date_start": "2025-02",
+          "date_end": "2025-02",
+          "avg_sentiment": -0.161,
+          "avg_toxicity": 0.027
+        },
+        {
+          "phase": "Saturation",
+          "post_count": 96,
+          "date_start": "2025-02",
+          "date_end": "2025-02",
+          "avg_sentiment": -0.205,
+          "avg_toxicity": 0.022
+        }
+      ],
+      "monthly": [
+        {
+          "month": "2024-09",
+          "post_count": 1,
+          "avg_sentiment": 0.0,
+          "avg_toxicity": 0.001,
+          "max_toxicity": 0.001
+        },
+        {
+          "month": "2024-10",
+          "post_count": 2,
+          "avg_sentiment": -0.446,
+          "avg_toxicity": 0.012,
+          "max_toxicity": 0.024
+        },
+        {
+          "month": "2024-11",
+          "post_count": 6,
+          "avg_sentiment": -0.4,
+          "avg_toxicity": 0.161,
+          "max_toxicity": 0.855
+        },
+        {
+          "month": "2024-12",
+          "post_count": 3,
+          "avg_sentiment": -0.273,
+          "avg_toxicity": 0.004,
+          "max_toxicity": 0.007
+        },
+        {
+          "month": "2025-01",
+          "post_count": 16,
+          "avg_sentiment": -0.322,
+          "avg_toxicity": 0.013,
+          "max_toxicity": 0.114
+        },
+        {
+          "month": "2025-02",
+          "post_count": 353,
+          "avg_sentiment": -0.197,
+          "avg_toxicity": 0.019,
+          "max_toxicity": 0.978
+        }
+      ],
+      "most_toxic_post": {
+        "text": "There it is. So free speech is why the holocaust happened\u2026 are you fuckin kidding me. It makes sense why the far left is fighting for \u201cfree speech\u201d while also censoring you left right and center that I bet many of them believe this. You can say whatever you want about jd Vance but to fight and ridic",
+        "author": "earlesj",
+        "subreddit": "Conservative",
+        "score": 15,
+        "date": "2025-02-17",
+        "toxicity": 0.978,
+        "sentiment": -0.861
+      },
+      "most_viral_post": {
+        "text": "Trump wants to halve US defense spending and let Russia back into G7 after Putin call",
+        "author": "feed_meknowledge",
+        "subreddit": "politics",
+        "score": 8684,
+        "date": "2025-02-17",
+        "toxicity": 0.026,
+        "sentiment": 0.0
+      }
+    },
+    {
+      "topic_id": 5,
+      "avg_sentiment": -0.278,
+      "avg_toxicity": 0.028,
+      "phases": [
+        {
+          "phase": "Emergence",
+          "post_count": 73,
+          "date_start": "2024-08",
+          "date_end": "2025-01",
+          "avg_sentiment": -0.234,
+          "avg_toxicity": 0.03
+        },
+        {
+          "phase": "Growth",
+          "post_count": 74,
+          "date_start": "2025-01",
+          "date_end": "2025-02",
+          "avg_sentiment": -0.277,
+          "avg_toxicity": 0.049
+        },
+        {
+          "phase": "Peak",
+          "post_count": 73,
+          "date_start": "2025-02",
+          "date_end": "2025-02",
+          "avg_sentiment": -0.243,
+          "avg_toxicity": 0.021
+        },
+        {
+          "phase": "Saturation",
+          "post_count": 74,
+          "date_start": "2025-02",
+          "date_end": "2025-02",
+          "avg_sentiment": -0.356,
+          "avg_toxicity": 0.014
+        }
+      ],
+      "monthly": [
+        {
+          "month": "2024-08",
+          "post_count": 1,
+          "avg_sentiment": 0.0,
+          "avg_toxicity": 0.001,
+          "max_toxicity": 0.001
+        },
+        {
+          "month": "2024-09",
+          "post_count": 1,
+          "avg_sentiment": 0.0,
+          "avg_toxicity": 0.001,
+          "max_toxicity": 0.001
+        },
+        {
+          "month": "2024-10",
+          "post_count": 1,
+          "avg_sentiment": -0.569,
+          "avg_toxicity": 0.001,
+          "max_toxicity": 0.001
+        },
+        {
+          "month": "2024-11",
+          "post_count": 8,
+          "avg_sentiment": -0.112,
+          "avg_toxicity": 0.014,
+          "max_toxicity": 0.068
+        },
+        {
+          "month": "2024-12",
+          "post_count": 11,
+          "avg_sentiment": -0.159,
+          "avg_toxicity": 0.053,
+          "max_toxicity": 0.358
+        },
+        {
+          "month": "2025-01",
+          "post_count": 104,
+          "avg_sentiment": -0.277,
+          "avg_toxicity": 0.035,
+          "max_toxicity": 0.982
+        },
+        {
+          "month": "2025-02",
+          "post_count": 168,
+          "avg_sentiment": -0.296,
+          "avg_toxicity": 0.024,
+          "max_toxicity": 0.828
+        }
+      ],
+      "most_toxic_post": {
+        "text": "Anyone know where to get really viscious anti-ICE shirts? Not the generic FCK ICE shirts I see everywhere. I'm of the mindset this time around that when they go low, we go lower. Fuck 'em.",
+        "author": "alkemest",
+        "subreddit": "socialism",
+        "score": 10,
+        "date": "2025-01-24",
+        "toxicity": 0.982,
+        "sentiment": -0.896
+      },
+      "most_viral_post": {
+        "text": "Border Czar Whines It\u2019s Been \u2018Hard\u2019 to Find Undocumented Immigrants",
+        "author": "z8675309z",
+        "subreddit": "politics",
+        "score": 23576,
+        "date": "2025-02-16",
+        "toxicity": 0.009,
+        "sentiment": -0.649
+      }
+    },
+    {
+      "topic_id": 6,
+      "avg_sentiment": -0.215,
+      "avg_toxicity": 0.013,
+      "phases": [
+        {
+          "phase": "Emergence",
+          "post_count": 70,
+          "date_start": "2024-07",
+          "date_end": "2025-02",
+          "avg_sentiment": -0.276,
+          "avg_toxicity": 0.021
+        },
+        {
+          "phase": "Growth",
+          "post_count": 70,
+          "date_start": "2025-02",
+          "date_end": "2025-02",
+          "avg_sentiment": -0.167,
+          "avg_toxicity": 0.003
+        },
+        {
+          "phase": "Peak",
+          "post_count": 70,
+          "date_start": "2025-02",
+          "date_end": "2025-02",
+          "avg_sentiment": -0.244,
+          "avg_toxicity": 0.014
+        },
+        {
+          "phase": "Saturation",
+          "post_count": 71,
+          "date_start": "2025-02",
+          "date_end": "2025-02",
+          "avg_sentiment": -0.174,
+          "avg_toxicity": 0.014
+        }
+      ],
+      "monthly": [
+        {
+          "month": "2024-07",
+          "post_count": 1,
+          "avg_sentiment": -0.818,
+          "avg_toxicity": 0.004,
+          "max_toxicity": 0.004
+        },
+        {
+          "month": "2024-11",
+          "post_count": 5,
+          "avg_sentiment": -0.527,
+          "avg_toxicity": 0.008,
+          "max_toxicity": 0.019
+        },
+        {
+          "month": "2024-12",
+          "post_count": 2,
+          "avg_sentiment": -0.702,
+          "avg_toxicity": 0.014,
+          "max_toxicity": 0.014
+        },
+        {
+          "month": "2025-01",
+          "post_count": 11,
+          "avg_sentiment": -0.153,
+          "avg_toxicity": 0.001,
+          "max_toxicity": 0.003
+        },
+        {
+          "month": "2025-02",
+          "post_count": 262,
+          "avg_sentiment": -0.206,
+          "avg_toxicity": 0.014,
+          "max_toxicity": 0.42
+        }
+      ],
+      "most_toxic_post": {
+        "text": "US is biggest loser from Trump's metals tariffs",
+        "author": "rhino910",
+        "subreddit": "democrats",
+        "score": 311,
+        "date": "2025-02-16",
+        "toxicity": 0.42,
+        "sentiment": -0.905
+      },
+      "most_viral_post": {
+        "text": "Canada reportedly has a detailed retaliation plan to Trump\u2019s tariffs that will seek to hurt Republican states the most",
+        "author": "Spiderwig144",
+        "subreddit": "democrats",
+        "score": 5698,
+        "date": "2025-02-01",
+        "toxicity": 0.008,
+        "sentiment": -0.641
+      }
+    },
+    {
+      "topic_id": 7,
+      "avg_sentiment": -0.291,
+      "avg_toxicity": 0.014,
+      "phases": [
+        {
+          "phase": "Emergence",
+          "post_count": 68,
+          "date_start": "2024-08",
+          "date_end": "2025-02",
+          "avg_sentiment": -0.249,
+          "avg_toxicity": 0.012
+        },
+        {
+          "phase": "Growth",
+          "post_count": 68,
+          "date_start": "2025-02",
+          "date_end": "2025-02",
+          "avg_sentiment": -0.197,
+          "avg_toxicity": 0.017
+        },
+        {
+          "phase": "Peak",
+          "post_count": 68,
+          "date_start": "2025-02",
+          "date_end": "2025-02",
+          "avg_sentiment": -0.362,
+          "avg_toxicity": 0.02
+        },
+        {
+          "phase": "Saturation",
+          "post_count": 69,
+          "date_start": "2025-02",
+          "date_end": "2025-02",
+          "avg_sentiment": -0.354,
+          "avg_toxicity": 0.008
+        }
+      ],
+      "monthly": [
+        {
+          "month": "2024-08",
+          "post_count": 3,
+          "avg_sentiment": -0.403,
+          "avg_toxicity": 0.003,
+          "max_toxicity": 0.007
+        },
+        {
+          "month": "2024-09",
+          "post_count": 4,
+          "avg_sentiment": -0.205,
+          "avg_toxicity": 0.003,
+          "max_toxicity": 0.009
+        },
+        {
+          "month": "2024-11",
+          "post_count": 6,
+          "avg_sentiment": -0.43,
+          "avg_toxicity": 0.014,
+          "max_toxicity": 0.081
+        },
+        {
+          "month": "2024-12",
+          "post_count": 5,
+          "avg_sentiment": 0.073,
+          "avg_toxicity": 0.003,
+          "max_toxicity": 0.007
+        },
+        {
+          "month": "2025-01",
+          "post_count": 37,
+          "avg_sentiment": -0.263,
+          "avg_toxicity": 0.017,
+          "max_toxicity": 0.285
+        },
+        {
+          "month": "2025-02",
+          "post_count": 218,
+          "avg_sentiment": -0.3,
+          "avg_toxicity": 0.014,
+          "max_toxicity": 0.864
+        }
+      ],
+      "most_toxic_post": {
+        "text": "Trump\u2019s Supreme Court Immunity Ruling Just Came Back to Bite Him - Lol. Enjoy your shit sandwich Magats - Let\u2019s have a FOIA party!",
+        "author": "NoThirdTerm",
+        "subreddit": "democrats",
+        "score": 540,
+        "date": "2025-02-11",
+        "toxicity": 0.864,
+        "sentiment": -0.705
+      },
+      "most_viral_post": {
+        "text": "\u2018We\u2019ve been betrayed:\u2019 Local veterans angry after being laid off by Trump administration",
+        "author": "Rock-n-roll-Kevin",
+        "subreddit": "politics",
+        "score": 41400,
+        "date": "2025-02-15",
+        "toxicity": 0.002,
+        "sentiment": -0.91
+      }
+    }
+  ],
+  "corpus_stats": {
+    "avg_sentiment": -0.186,
+    "avg_toxicity": 0.049,
+    "high_toxicity_count": 231,
+    "rage_amplification": 1.08,
+    "most_toxic_cluster": 0
+  }
+}
