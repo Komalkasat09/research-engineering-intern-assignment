@@ -407,7 +407,16 @@ Pipeline stages:
 - Use `/posts` in Both mode to compare historical corpus posts with live classified posts.
 - Use Ask Signal for synthesis and follow-up investigative framing.
 
-## Security
-
-- Never commit API keys.
-- If any key has been exposed in logs/screenshots/chat, rotate it immediately.
+## Similar Platforms Studied
+1. **NarrativeSignal** (fellow applicant) — network graph + 
+   streamgraph approach. Strong visual design but relies on 
+   synthetic/demo data. Signal differentiates with real pipeline 
+   output and specific findings.
+2. **Fabio Giglietto's TikTok CSBN** — coordinated behavior 
+   visualization. Inspired our URL-pair synchronization detection.
+3. **Integrity Institute Dashboard** — misinformation amplification 
+   tracking. Inspired our "rage amplification" metric (toxic posts 
+   get 2.4× more upvotes than civil posts).
+4. **News Literacy Project** — source credibility focus. Signal 
+   extends this by tracking not just sources but narrative mutation 
+   across communities.
