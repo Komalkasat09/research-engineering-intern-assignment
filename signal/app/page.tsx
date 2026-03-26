@@ -319,6 +319,11 @@ export default function LandingPage() {
   const router = useRouter();
   const [hoveredCluster, setHoveredCluster] = useState<number | null>(null);
   const [tick, setTick] = useState(0);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Animate activity bars
   useEffect(() => {
@@ -579,7 +584,9 @@ export default function LandingPage() {
           }}
         >
           {barHeights.map((h, i) => {
-            const animH = Math.max(6, (h + Math.sin((tick + i) * 0.7) * 8));
+            const animH = mounted
+              ? Math.max(6, Math.round(h + Math.sin((tick + i) * 0.7) * 8))
+              : h;
             const clusterIdx = i % CLUSTERS.length;
             return (
               <div
