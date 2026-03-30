@@ -125,7 +125,7 @@ export default function NarrativeCanvas({ width, height }: NarrativeCanvasProps)
     visible: false, x: 0, y: 0, postId: "", topicName: "", score: 0,
   });
 
-  const { activeTopic, setActiveTopic, setMeta, liveFeedResults, showLiveLayer } = useSignalStore();
+  const { activeTopic, setActiveTopic, visibleClusterIds, setMeta, liveFeedResults, showLiveLayer } = useSignalStore();
   const activeTopicRef = useRef(activeTopic);
   activeTopicRef.current = activeTopic;
   const suppressNextCanvasClick = useRef(false);
@@ -135,14 +135,23 @@ export default function NarrativeCanvas({ width, height }: NarrativeCanvasProps)
     const sprites = spritesRef.current;
     const points  = pointsRef.current;
     for (let i = 0; i < sprites.length; i++) {
-      if (active === null) {
+      const isClusterVisible = visibleClusterIds === null || visibleClusterIds.includes(points[i].topicId);
+
+      if (!isClusterVisible) {
+        sprites[i].alpha = 0;
+        sprites[i].visible = false;
+      } else if (active === null) {
         sprites[i].alpha = POINT_ALPHA;
+        sprites[i].visible = true;
+      } else if (points[i].topicId === active) {
+        sprites[i].alpha = ACTIVE_ALPHA;
+        sprites[i].visible = true;
       } else {
-        sprites[i].alpha =
-          points[i].topicId === active ? ACTIVE_ALPHA : DIM_ALPHA;
+        sprites[i].alpha = DIM_ALPHA;
+        sprites[i].visible = true;
       }
     }
-  }, []);
+  }, [visibleClusterIds]);
 
   // ── Hit test: find nearest point to canvas coords ─────────────────────────
   // O(n) — fast enough for hover at 60fps since we throttle to 60ms
@@ -295,6 +304,7 @@ export default function NarrativeCanvas({ width, height }: NarrativeCanvasProps)
 
       for (const cluster of clusters) {
         if (cluster.id === -1) continue;
+        if (visibleClusterIds !== null && !visibleClusterIds.includes(cluster.id)) continue;
 
         // Find approximate centroid in pixel space from the data
         const clusterPoints = data.points.filter((p: MapPoint) => p.topicId === cluster.id);
@@ -347,7 +357,7 @@ export default function NarrativeCanvas({ width, height }: NarrativeCanvasProps)
         labelContainer.addChild(pill);
       }
     },
-    [setActiveTopic],
+    [setActiveTopic, visibleClusterIds],
   );
 
   // ── Build live posts layer ────────────────────────────────────────────────
@@ -591,7 +601,7 @@ export default function NarrativeCanvas({ width, height }: NarrativeCanvasProps)
   // ── React to activeTopic changes (dim/highlight) ──────────────────────────
   useEffect(() => {
     applyAlpha(activeTopic);
-  }, [activeTopic, applyAlpha]);
+  }, [activeTopic, visibleClusterIds, applyAlpha]);
 
   // ── React to live feed results or show layer toggle ───────────────────────
   useEffect(() => {

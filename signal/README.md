@@ -21,10 +21,10 @@ This section is intentionally formatted to match the assignment checklist.
 
 Add screenshots of key views below (replace placeholders with real images in your repo):
 
-![Explore Workspace](/workspace%20explorer.png)
-![Live Feed Injector](/live-feed-injector.png)
-![Posts Explorer Both Mode](/post-explorer.png)
-![Ask Signal](/ask-signal.png)
+![Explore Workspace](signal/public/ask-signal.png)
+![Live Feed Injector](signal/public/live-feed-injector.png)
+![Posts Explorer Both Mode](signal/public/post-explorer.png)
+![Ask Signal](signal/public/ask-signal.png)
 
 ### 3. Text-based system design explanation and thought process
 

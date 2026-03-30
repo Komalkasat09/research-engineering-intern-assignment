@@ -73,6 +73,8 @@ interface SignalStore {
   showLiveLayer:   boolean;
   setShowLiveLayer: (show: boolean) => void;
   toggleShowLiveLayer: () => void;
+  visibleClusterIds: number[] | null;
+  setVisibleClusterIds: (ids: number[] | null) => void;
   savedMonitorQueries: MonitorQuery[];
   addMonitorQuery: (query: string, topicFilter: number | null) => void;
   removeMonitorQuery: (id: string) => void;
@@ -129,6 +131,8 @@ export const useSignalStore = create<SignalStore>()(
       showLiveLayer: false,
       setShowLiveLayer: (show) => set({ showLiveLayer: show }),
       toggleShowLiveLayer: () => set((state) => ({ showLiveLayer: !state.showLiveLayer })),
+      visibleClusterIds: null,
+      setVisibleClusterIds: (ids) => set({ visibleClusterIds: ids }),
       savedMonitorQueries: [],
       addMonitorQuery: (query, topicFilter) => set((state) => ({
         savedMonitorQueries: [...state.savedMonitorQueries, {

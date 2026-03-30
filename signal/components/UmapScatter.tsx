@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSignalStore } from "@/lib/store";
+import { cleanTopicName } from "@/lib/cleanTopicName";
 
 type ClusterInfo = { id: number; color: string; name?: string; label?: string };
 
@@ -126,7 +127,7 @@ export default function UmapScatter({ clusters }: Props) {
       return {
         type: "scattergl",
         mode: "markers",
-        name: clusterLabelMap.get(clusterId) ?? `topic #${clusterId}`,
+        name: cleanTopicName(clusterLabelMap.get(clusterId) ?? `topic #${clusterId}`),
         x: rows.map((r) => r.umap_x),
         y: rows.map((r) => r.umap_y),
         customdata: rows.map((r) => [

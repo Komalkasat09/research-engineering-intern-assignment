@@ -127,9 +127,10 @@ function confidenceColor(label?: "high" | "medium" | "low"): string {
 }
 
 export default function ExplorePage() {
-  const { activeTopic, setActiveTopic, setInvestigationContext, meta } = useSignalStore();
+  const { activeTopic, setActiveTopic, setInvestigationContext, setVisibleClusterIds, meta } = useSignalStore();
   const router = useRouter();
   const { isNarrow } = useBreakpoint();
+  const [isClient, setIsClient] = useState(false);
 
   const [clusters, setClusters] = useState<TopicCluster[]>([]);
   const [trends, setTrends] = useState<TrendNarrative[]>([]);
@@ -151,6 +152,10 @@ export default function ExplorePage() {
   const mapCanvasRef = useRef<HTMLDivElement>(null);
   const didMount = useRef(false);
   const [mapDims, setMapDims] = useState({ w: 0, h: 0 });
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   useEffect(() => {
     const saved = window.localStorage.getItem("signal-explore-tab");
@@ -212,13 +217,19 @@ export default function ExplorePage() {
           const clusterList = (Array.isArray(clusterData)
             ? clusterData
             : (clusterData.topics ?? [])) as Array<Record<string, unknown>>;
-          setClusters(clusterList as unknown as TopicCluster[]);
+          const newClusters = clusterList as unknown as TopicCluster[];
+          setClusters(newClusters);
+
+          const visibleIds = newClusters
+            .filter((c) => c.id !== -1)
+            .map((c) => c.id);
+          setVisibleClusterIds(clusterK === 0 ? null : visibleIds);
         })
         .catch(console.error);
     }, 300);
 
     return () => window.clearTimeout(timer);
-  }, [clusterK]);
+  }, [clusterK, setVisibleClusterIds]);
 
   useEffect(() => {
     if (loading) return;
@@ -331,7 +342,8 @@ export default function ExplorePage() {
   }, [activeTopic, activeTopicName]);
 
   const totalVelocityPoints = velocity.filter((d) => d.topic_id !== -1).length;
-  const shouldStretchTrendCards = !isNarrow && filteredTrends.length > 0 && filteredTrends.length <= 8;
+  const isNarrowSafe = isClient ? isNarrow : false;
+  const shouldStretchTrendCards = !isNarrowSafe && filteredTrends.length > 0 && filteredTrends.length <= 8;
 
   useEffect(() => {
     if (activeTab !== "timeline") return;
@@ -510,22 +522,22 @@ export default function ExplorePage() {
         <div
           style={{
             display: "flex",
-            minHeight: isNarrow ? 600 : undefined,
+            minHeight: isNarrowSafe ? 600 : undefined,
             gap: 10,
-            flexDirection: isNarrow ? "column" : "row",
+            flexDirection: isNarrowSafe ? "column" : "row",
             alignItems: "stretch",
           }}
         >
           <div
             style={{
-              width: isNarrow ? "100%" : "clamp(260px, 28vw, 380px)",
+              width: isNarrowSafe ? "100%" : "clamp(260px, 28vw, 380px)",
               flexShrink: 0,
               display: "flex",
               flexDirection: "column",
               border: "1px solid var(--border)",
               borderRadius: "var(--radius-md)",
               background: "var(--surface)",
-              minHeight: isNarrow ? "auto" : undefined,
+              minHeight: isNarrowSafe ? "auto" : undefined,
               overflowY: "visible",
               overflowX: "hidden",
             }}
@@ -802,8 +814,8 @@ export default function ExplorePage() {
             <div
               style={{
                 flex: "1 1 auto",
-                minHeight: isNarrow ? 420 : 300,
-                height: isNarrow ? 420 : undefined,
+                minHeight: isNarrowSafe ? 420 : 300,
+                height: isNarrowSafe ? 420 : undefined,
                 position: "relative",
                 overflow: "hidden",
                 border: "1px solid var(--border)",
