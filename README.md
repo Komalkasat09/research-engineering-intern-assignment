@@ -21,10 +21,10 @@ This section is intentionally formatted to match the assignment checklist.
 
 Screenshots of key views:
 
-![Explore Workspace](public/workspace explorer.png)
-![Live Feed Injector](public/live-feed-injector.png)
-![Posts Explorer Both Mode](public/post-explorer.png)
-![Ask Signal](public/ask-signal.png)
+![Explore Workspace](signal/public/workspace-explorer.png)
+![Live Feed Injector](signal/public/live-feed-injector.png)
+![Posts Explorer Both Mode](signal/public/post-explorer.png)
+![Ask Signal](signal/public/ask-signal.png)
 
 ### 3. Text-based system design explanation and thought process
 
