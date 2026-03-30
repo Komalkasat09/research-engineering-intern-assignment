@@ -603,6 +603,27 @@ export default function NarrativeCanvas({ width, height }: NarrativeCanvasProps)
     applyAlpha(activeTopic);
   }, [activeTopic, visibleClusterIds, applyAlpha]);
 
+  // ── React to visible cluster filtering (rebuild centroid labels) ──────────
+  useEffect(() => {
+    const app = appRef.current;
+    if (!app || !pointsRef.current.length || !clustersRef.current.length) return;
+
+    const world = app.stage.children[0] as PIXI.Container | undefined;
+    if (!world) return;
+
+    if (labelsRef.current) {
+      world.removeChild(labelsRef.current);
+      labelsRef.current.destroy({ children: true });
+      labelsRef.current = null;
+    }
+
+    buildLabels(clustersRef.current, {
+      points: pointsRef.current,
+      clusters: clustersRef.current,
+      meta: { total_posts: 0, date_start: "", date_end: "", subreddits: 0, unique_authors: 0, topic_count: 0 },
+    } as MapData);
+  }, [visibleClusterIds, buildLabels]);
+
   // ── React to live feed results or show layer toggle ───────────────────────
   useEffect(() => {
     if (!appRef.current) return;
