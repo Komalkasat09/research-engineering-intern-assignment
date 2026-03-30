@@ -4,22 +4,45 @@
  * In production this would query DuckDB; for the hosted demo it reads
  * the precomputed output committed to public/data/.
  */
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import path from "path";
 import fs from "fs";
 import { allowSyntheticData, missingDataResponse } from "@/lib/dataMode";
 
-export const dynamic = "force-static";   // built at deploy time
-export const revalidate = 3600;          // re-fetch once per hour
-
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const k = Number(req.nextUrl.searchParams.get("k") ?? "0");
     const filePath = path.join(process.cwd(), "public", "data", "topics.json");
 
     // If the precomputed file exists, serve it directly
     if (fs.existsSync(filePath)) {
       const data = JSON.parse(fs.readFileSync(filePath, "utf-8"));
-      return NextResponse.json(data);
+      if (Array.isArray(data)) {
+        const topics = data
+          .filter((t) => Number(t?.id) !== -1)
+          .sort(
+            (a, b) =>
+              Number(b?.post_count ?? b?.count ?? 0) -
+              Number(a?.post_count ?? a?.count ?? 0)
+          );
+
+        const sliced = k >= 2 ? topics.slice(0, k) : topics;
+        return NextResponse.json(sliced);
+      }
+
+      const topics = (data?.topics ?? [])
+        .filter((t: { id?: number }) => Number(t?.id) !== -1)
+        .sort(
+          (
+            a: { post_count?: number; count?: number },
+            b: { post_count?: number; count?: number }
+          ) =>
+            Number(b?.post_count ?? b?.count ?? 0) -
+            Number(a?.post_count ?? a?.count ?? 0)
+        );
+
+      const sliced = k >= 2 ? topics.slice(0, k) : topics;
+      return NextResponse.json({ ...data, topics: sliced });
     }
 
     if (!allowSyntheticData()) {

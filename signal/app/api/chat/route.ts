@@ -303,6 +303,22 @@ function detectAnalystAlert(args: {
   };
 }
 
+function detectNonEnglish(text: string): boolean {
+  // Check for non-ASCII characters (covers Arabic, Hindi, Chinese, Cyrillic, etc.)
+  if (/[^\x00-\x7F]/.test(text)) return true;
+
+  // Check for common non-English stopwords
+  const nonEnglishMarkers = [
+    "le ", "la ", "les ", "de ", "du ", "des ", "un ", "une ",
+    "el ", "la ", "los ", "las ", "un ", "una ", "de ", "en ",
+    "der ", "die ", "das ", "ein ", "eine ", "und ", "ist ",
+    "की ", "में ", "है ", "का ", "को ",
+  ];
+
+  const lower = text.toLowerCase();
+  return nonEnglishMarkers.some((marker) => lower.includes(marker));
+}
+
 // ── System prompt ─────────────────────────────────────────────────────────────
 // This is the most important part of the implementation.
 // The framing (OSINT analyst, not chatbot) changes the entire register.
@@ -366,6 +382,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
 
+  const earlyLastMsg = [...messages].reverse()
+    .find((m) => m.role === "user")?.content ?? "";
+
+  if (!earlyLastMsg.trim()) {
+    return NextResponse.json(
+      { error: "Query cannot be empty." }, { status: 400 }
+    );
+  }
+
+  if (earlyLastMsg.trim().length < 3) {
+    return NextResponse.json(
+      { error: "Query too short to retrieve meaningful results. Try a phrase or sentence." },
+      { status: 400 }
+    );
+  }
+
+  const isNonEnglish = detectNonEnglish(earlyLastMsg);
+
   // Check for API key(s)
   if (!getGroqApiKeys().length) {
     return NextResponse.json(
@@ -378,9 +412,7 @@ export async function POST(req: NextRequest) {
 
   // Retrieve relevant context for the last user message.
   // Real publication mode uses pipeline artifacts from data/faiss_meta.json.
-  const lastUserMessage = [...messages]
-    .reverse()
-    .find((m) => m.role === "user")?.content ?? "";
+  const lastUserMessage = earlyLastMsg;
 
   const loadedMeta = startupFaissMeta ?? loadFaissMeta();
   if (!loadedMeta || loadedMeta.length === 0) {
@@ -429,6 +461,12 @@ ANALYST ALERT: Coordination signals detected for ${analystAlert.topic}.
 Velocity spike on ${analystAlert.date}. Factor this into your response and flag if the user should be concerned.`
     : "";
 
+  const languageBlock = isNonEnglish
+    ? `
+
+LANGUAGE NOTE: The user query appears to be non-English. Respond in the same language as the query. Ground your analysis in the English-language dataset and translate key findings.`
+    : "";
+
   // Build augmented system prompt with evidence
   const augmentedSystem = `${SYSTEM_PROMPT}
 
@@ -445,6 +483,8 @@ ${FOLLOWUP_JSON_INSTRUCTION}
 ${analystAlertBlock}
 
 ${contextBlock}
+
+${languageBlock}
 
 ---
 
@@ -506,6 +546,9 @@ Remaining rate limit for this session: ${remaining} requests.`;
     if (analystAlert.triggered) {
       headers.set("x-signal-suspicion-topic", encodeURIComponent(analystAlert.topic));
       headers.set("x-signal-suspicion-date", analystAlert.date);
+    }
+    if (isNonEnglish) {
+      headers.set("x-signal-non-english", "1");
     }
 
     return new Response(completionText, {

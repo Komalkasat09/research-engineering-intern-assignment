@@ -72,6 +72,7 @@ function interleavePosts(dataset: ExplorerPost[], live: ExplorerPost[]): Explore
 function PostsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const highlightId = searchParams.get("highlight");
   const { activeTopic, setActiveTopic, liveFeedResults } = useSignalStore();
 
   const [clusters, setClusters] = useState<TopicCluster[]>([]);
@@ -83,6 +84,7 @@ function PostsPageContent() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<SearchResponse | null>(null);
   const [mode, setMode] = useState<PostSourceMode>("dataset");
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
 
   const limit = 25;
 
@@ -100,6 +102,11 @@ function PostsPageContent() {
     if (topicParam !== null && topicParam !== "") {
       const tid = Number(topicParam);
       if (Number.isFinite(tid)) setActiveTopic(tid);
+    }
+    if (highlightId) {
+      setHighlightedId(highlightId);
+      const timer = setTimeout(() => setHighlightedId(null), 3000);
+      return () => clearTimeout(timer);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -193,6 +200,14 @@ function PostsPageContent() {
     if (mode === "live") return livePosts;
     return interleavePosts(datasetPosts, livePosts);
   }, [mode, datasetPosts, livePosts]);
+
+  useEffect(() => {
+    if (!highlightedId || visiblePosts.length === 0) return;
+    document.getElementById(`post-${highlightedId}`)?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  }, [visiblePosts, highlightedId]);
 
   const topSubreddit = useMemo(() => {
     const counts = new Map<string, number>();
@@ -354,7 +369,7 @@ function PostsPageContent() {
 
         <div style={{ display: "grid", gap: 8 }}>
           {visiblePosts.map((p) => (
-            <div key={`${p.source}-${p.post_id}`} style={{ border: "1px solid var(--border)", borderRadius: "var(--radius-md)", background: "var(--surface)", padding: "10px 12px", cursor: "pointer" }} onClick={() => setSelected(p)}>
+            <div id={`post-${p.post_id}`} key={`${p.source}-${p.post_id}`} style={{ borderLeft: p.post_id === highlightedId ? "3px solid var(--teal)" : "1px solid var(--border)", borderRadius: "var(--radius-md)", background: p.post_id === highlightedId ? "rgba(29,158,117,0.08)" : "var(--surface-2)", padding: "10px 12px", cursor: "pointer" }} onClick={() => setSelected(p)}>
               <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}>
                 <div style={{ fontSize: 10, color: "var(--dim)", fontFamily: "var(--font-mono)" }}>
                   [{p.post_id}] u/{p.author} · r/{p.subreddit} · {p.date} · ↑ {p.score}

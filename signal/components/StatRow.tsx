@@ -1,13 +1,17 @@
 // FILE: components/StatRow.tsx
 "use client";
 import { fmtCount } from "@/lib/utils";
+import { useBreakpoint } from "@/lib/useBreakpoint";
 
 interface Stat { label: string; value: string | number; delta?: string; deltaColor?: string; mono?: boolean; }
 interface Props { stats: Stat[]; }
 
 export default function StatRow({ stats }: Props) {
+  const { width } = useBreakpoint();
+  const columns = width < 600 ? "1fr" : width < 900 ? "repeat(2, 1fr)" : "repeat(4, 1fr)";
+
   return (
-    <div style={{ display:"grid", gridTemplateColumns:`repeat(${stats.length},1fr)`, gap:10 }}>
+    <div style={{ display: "grid", gridTemplateColumns: columns, gap: 8 }}>
       {stats.map((s) => (
         <div key={s.label} className="stat-card fade-up">
           <div className="stat-card__label" suppressHydrationWarning>{s.label}</div>

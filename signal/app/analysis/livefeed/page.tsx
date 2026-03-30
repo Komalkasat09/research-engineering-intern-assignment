@@ -284,7 +284,7 @@ function PostCard({ post, clusterNameMap, index }: PostCardProps) {
             }}
             title="This post may represent an emerging narrative"
           >
-            ⚠ Emerging
+            Emerging signal
           </div>
         )}
       </div>
@@ -304,7 +304,7 @@ function PostCard({ post, clusterNameMap, index }: PostCardProps) {
             transition: "all 0.2s",
           }}
         >
-          {expanded ? "▼" : "▶"} {expanded ? "Hide" : "Show"} reasoning
+          {expanded ? "Hide reasoning" : "Show reasoning"}
         </button>
         {expanded && (
           <div
@@ -658,7 +658,7 @@ export default function LiveFeedPage() {
         {isPending && safePosts.length === 0 && (
           <div style={{ padding: "20px", textAlign: "center" }}>
             <p style={{ marginBottom: "16px", color: "var(--muted)" }}>
-              ⏳ Fetching + classifying posts...
+              Fetching and classifying posts...
             </p>
             <p
               style={{
@@ -695,8 +695,7 @@ export default function LiveFeedPage() {
               <strong>{existingClusters} clusters</strong>
               {newNarratives > 0 && (
                 <>
-                  {" "}
-                  · <strong>{newNarratives}</strong> ⚠ emerging
+                  {" "}· <strong>{newNarratives}</strong> emerging
                 </>
               )}
             </span>
@@ -728,7 +727,7 @@ export default function LiveFeedPage() {
                   el.style.boxShadow = "none";
                 }}
               >
-                View on Map →
+                View on map
               </button>
             )}
           </div>
@@ -795,7 +794,7 @@ export default function LiveFeedPage() {
             }}
           >
             <p style={{ marginBottom: "12px", fontWeight: "600", color: "var(--strong)" }}>
-              🚀 How it works:
+              Workflow overview:
             </p>
             <ul
               style={{
@@ -806,15 +805,15 @@ export default function LiveFeedPage() {
               }}
             >
               <li style={{ marginBottom: "6px" }}>
-                🔍 Search Reddit for trending topics (last 7 days)
+                Search Reddit for recent topics (last 7 days)
               </li>
               <li style={{ marginBottom: "6px" }}>
-                🤖 Classify using Llama 3.3 70B (optimized inference)
+                Classify posts using Llama 3.3 70B
               </li>
               <li style={{ marginBottom: "6px" }}>
-                📊 Show confidence scores with color gradient
+                Review confidence scores with severity color coding
               </li>
-              <li>🗺️ Map results to existing narrative clusters</li>
+              <li>Map results to existing narrative clusters</li>
             </ul>
           </div>
         )}

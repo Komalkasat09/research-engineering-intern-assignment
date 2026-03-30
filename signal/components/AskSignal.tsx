@@ -9,6 +9,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useSignalStore } from "@/lib/store";
+import { linkifyPostIds } from "@/lib/linkifyPostIds";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -31,6 +32,8 @@ const SUGGESTED_QUERIES = [
   "What narratives dominated r/politics in January 2025?",
   "Which topics show the highest narrative velocity and why?",
 ];
+
+const ASK_SIGNAL_CHAT_STORAGE_KEY = "signal-ask-chat-v1";
 
 // ── Message bubble ────────────────────────────────────────────────────────────
 
@@ -111,9 +114,10 @@ function MessageBubble({ role, content, followups, suspicionFlag, suspicionTopic
 
       {/* Main analysis */}
       <div
-        style={{ fontSize: 13, fontFamily: "var(--font-serif)", color: "#C8D3E0", lineHeight: 1.75, paddingLeft: 30 }}
-        dangerouslySetInnerHTML={{ __html: formatAnalysis(mainContent) }}
-      />
+        style={{ fontSize: 13, fontFamily: "var(--font-serif)", color: "#C8D3E0", lineHeight: 1.75, paddingLeft: 30, whiteSpace: "pre-wrap" }}
+      >
+        <span>{linkifyPostIds(mainContent)}</span>
+      </div>
 
       {/* Follow-up angles */}
       {followupSection && (
@@ -122,9 +126,10 @@ function MessageBubble({ role, content, followups, suspicionFlag, suspicionTopic
             Follow-up angles
           </div>
           <div
-            style={{ fontSize: 12, fontFamily: "var(--font-serif)", color: "#8A9BB0", lineHeight: 1.7, fontStyle: "italic" }}
-            dangerouslySetInnerHTML={{ __html: formatAnalysis(followupSection.replace("Follow-up angles:", "").trim()) }}
-          />
+            style={{ fontSize: 12, fontFamily: "var(--font-serif)", color: "#8A9BB0", lineHeight: 1.7, fontStyle: "italic", whiteSpace: "pre-wrap" }}
+          >
+            <span>{linkifyPostIds(followupSection.replace("Follow-up angles:", "").trim())}</span>
+          </div>
         </div>
       )}
 
@@ -168,17 +173,6 @@ function MessageBubble({ role, content, followups, suspicionFlag, suspicionTopic
       )}
     </div>
   );
-}
-
-function formatAnalysis(text: string): string {
-  return text
-    .replace(/\*\*(.*?)\*\*/g, "<strong style='color:#E2E8F0;font-weight:500'>$1</strong>")
-    .replace(
-      /\[post_(\w+)\]/g,
-      "<span style='font-family:var(--font-mono);font-size:11px;color:#1D9E75;background:rgba(29,158,117,0.1);padding:1px 5px;border-radius:4px;'>[post_$1]</span>"
-    )
-    .replace(/\n\n/g, "<br/><br/>")
-    .replace(/\n/g, "<br/>");
 }
 
 function parseFollowupsFromText(text: string): { cleanContent: string; followups: string[] } {
@@ -281,6 +275,34 @@ export default function AskSignal({ initialMessage }: Props) {
   const [isLoading,   setIsLoading]   = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [error,       setError]       = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(ASK_SIGNAL_CHAT_STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as { messages?: Message[] };
+      if (!Array.isArray(parsed.messages)) return;
+      const safe = parsed.messages.filter((m) =>
+        m
+        && (m.role === "user" || m.role === "assistant")
+        && typeof m.content === "string"
+      );
+      if (safe.length) setMessages(safe);
+    } catch {
+      // Ignore invalid persisted payloads.
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        ASK_SIGNAL_CHAT_STORAGE_KEY,
+        JSON.stringify({ messages, updatedAt: Date.now() })
+      );
+    } catch {
+      // Ignore storage quota/unavailable errors.
+    }
+  }, [messages]);
 
   useEffect(() => {
     if (!initialMessage) return;
@@ -445,6 +467,13 @@ export default function AskSignal({ initialMessage }: Props) {
     }, 50);
   }
 
+  function handleNewChat() {
+    abortRef.current?.abort();
+    setMessages([]);
+    setError(null);
+    setInput("");
+  }
+
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0 }}>
       {/* Active topic banner */}
@@ -568,21 +597,38 @@ export default function AskSignal({ initialMessage }: Props) {
           enter to send · shift+enter for new line ·{" "}
           {activeTopic !== null ? `scoped to topic #${activeTopic}` : "all topics · select a cluster to scope retrieval"}
           </div>
-          <button
-            type="button"
-            onClick={exportEvidenceNotebook}
-            disabled={messages.length === 0 || isExporting}
-            className="chip"
-            style={{
-              border: "1px solid #1E2530",
-              background: "transparent",
-              color: messages.length === 0 || isExporting ? "#3A4148" : "#8A9BB0",
-              cursor: messages.length === 0 || isExporting ? "not-allowed" : "pointer",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {isExporting ? "Exporting…" : "Export evidence"}
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <button
+              type="button"
+              onClick={handleNewChat}
+              disabled={messages.length === 0 && !input.trim()}
+              className="chip"
+              style={{
+                border: "1px solid #1E2530",
+                background: "transparent",
+                color: messages.length === 0 && !input.trim() ? "#3A4148" : "#8A9BB0",
+                cursor: messages.length === 0 && !input.trim() ? "not-allowed" : "pointer",
+                whiteSpace: "nowrap",
+              }}
+            >
+              New chat
+            </button>
+            <button
+              type="button"
+              onClick={exportEvidenceNotebook}
+              disabled={messages.length === 0 || isExporting}
+              className="chip"
+              style={{
+                border: "1px solid #1E2530",
+                background: "transparent",
+                color: messages.length === 0 || isExporting ? "#3A4148" : "#8A9BB0",
+                cursor: messages.length === 0 || isExporting ? "not-allowed" : "pointer",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {isExporting ? "Exporting..." : "Export evidence"}
+            </button>
+          </div>
         </div>
       </div>
 

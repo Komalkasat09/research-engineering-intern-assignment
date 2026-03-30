@@ -7,6 +7,7 @@ import { clsx } from "clsx";
 import type { CSSProperties } from "react";
 import type { DatasetMeta } from "@/types";
 import { useSignalStore } from "@/lib/store";
+import { useBreakpoint } from "@/lib/useBreakpoint";
 import AnalystRail from "@/components/AnalystRail";
 
 // ─── Nav config ──────────────────────────────────────────────────────────────
@@ -72,6 +73,8 @@ export default function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [railDrawerOpen, setRailDrawerOpen] = useState(false);
+  const { isMedium } = useBreakpoint();
   const {
     activeTopic,
     setActiveTopic,
@@ -126,16 +129,18 @@ export default function Shell({ children }: { children: React.ReactNode }) {
 
   const postsLabel = mounted && meta ? meta.total_posts.toLocaleString() : "—";
   const rangeLabel = mounted && meta ? `${meta.date_start} – ${meta.date_end}` : "—";
+  const showRailColumn = safeAnalystRailOpen && !isMedium;
 
   return (
     <div
       style={{
         display: "grid",
         gridTemplateColumns: sidebarOpen
-          ? `${224}px 1fr ${safeAnalystRailOpen ? "320px" : "0px"}`
-          : `0px 1fr ${safeAnalystRailOpen ? "320px" : "0px"}`,
+          ? `${224}px 1fr ${showRailColumn ? "320px" : "0px"}`
+          : `0px 1fr ${showRailColumn ? "320px" : "0px"}`,
         gridTemplateRows: "var(--topbar-h) 1fr",
-        height: "100dvh",
+        minHeight: "100vh",
+        height: "100vh",
         overflow: "hidden",
         transition: "grid-template-columns 0.2s ease",
       }}
@@ -145,6 +150,8 @@ export default function Shell({ children }: { children: React.ReactNode }) {
         className="scan-lines"
         style={{
           gridColumn: "1 / -1",
+          position: "sticky",
+          top: 0,
           display: "flex",
           alignItems: "center",
           gap: 12,
@@ -308,7 +315,13 @@ export default function Shell({ children }: { children: React.ReactNode }) {
 
         <button
           className={clsx("chip", safeAnalystRailOpen && "active")}
-          onClick={() => setAnalystRailOpen(!analystRailOpen)}
+          onClick={() => {
+            if (isMedium) {
+              setRailDrawerOpen((v) => !v);
+              return;
+            }
+            setAnalystRailOpen(!analystRailOpen);
+          }}
           style={topbarButtonStyle}
           aria-label="Toggle analyst rail"
         >
@@ -328,17 +341,23 @@ export default function Shell({ children }: { children: React.ReactNode }) {
       {/* ── Sidebar ────────────────────────────────────────────────────── */}
       <aside
         style={{
+          position: "sticky",
+          top: 0,
+          alignSelf: "stretch",
+          height: "100%",
+          maxHeight: "100%",
           borderRight: "1px solid var(--border)",
           background: "var(--surface)",
           display: "flex",
           flexDirection: "column",
-          overflowY: "auto",
+          minHeight: 0,
+          overflowY: "hidden",
           overflowX: "hidden",
           transition: "opacity 0.2s",
           opacity: sidebarOpen ? 1 : 0,
         }}
       >
-        <nav style={{ flex: 1, paddingTop: 8 }}>
+        <nav style={{ flex: 1, minHeight: 0, overflowY: "auto", paddingTop: 8 }}>
           {NAV_SECTIONS.map((section) => (
             <div key={section.title} style={{ marginBottom: 4 }}>
               {/* Section header */}
@@ -413,8 +432,11 @@ export default function Shell({ children }: { children: React.ReactNode }) {
         {/* Dataset footer */}
         <div
           style={{
+            position: "sticky",
+            bottom: 0,
             padding: "12px 16px",
             borderTop: "1px solid var(--border)",
+            background: "var(--surface)",
             flexShrink: 0,
           }}
         >
@@ -463,14 +485,65 @@ export default function Shell({ children }: { children: React.ReactNode }) {
         style={{
           display: "flex",
           flexDirection: "column",
-          overflow: "hidden",
+          minHeight: 0,
+          overflowY: "auto",
           background: "var(--bg)",
         }}
       >
         {children}
       </main>
 
-      <AnalystRail open={safeAnalystRailOpen} onClose={() => setAnalystRailOpen(false)} />
+      <AnalystRail open={showRailColumn} onClose={() => setAnalystRailOpen(false)} />
+
+      {isMedium && (
+        <>
+          <button
+            type="button"
+            onClick={() => setRailDrawerOpen(true)}
+            style={{
+              position: "fixed",
+              right: 16,
+              bottom: 16,
+              zIndex: 95,
+              background: "var(--teal)",
+              color: "#ffffff",
+              border: "none",
+              borderRadius: 999,
+              padding: "10px 16px",
+              fontSize: 12,
+              fontFamily: "var(--font-mono)",
+              cursor: "pointer",
+              boxShadow: "0 10px 24px rgba(0,0,0,0.35)",
+            }}
+          >
+            WORKFLOW ↑
+          </button>
+
+          {railDrawerOpen && (
+            <div
+              style={{
+                position: "fixed",
+                inset: 0,
+                zIndex: 100,
+                background: "rgba(0,0,0,0.5)",
+                display: "flex",
+                justifyContent: "flex-end",
+              }}
+            >
+              <div
+                style={{
+                  width: "min(360px, 92vw)",
+                  height: "100%",
+                  borderLeft: "1px solid var(--border)",
+                  background: "var(--surface)",
+                }}
+              >
+                <AnalystRail open={true} onClose={() => setRailDrawerOpen(false)} />
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }

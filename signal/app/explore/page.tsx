@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSignalStore } from "@/lib/store";
 import { cleanTopicName } from "@/lib/cleanTopicName";
+import { useBreakpoint } from "@/lib/useBreakpoint";
 import Shell from "@/components/Shell";
 import StatRow from "@/components/StatRow";
 import ClusterLegend from "@/components/ClusterLegend";
@@ -20,6 +21,7 @@ const SpreadGraph = dynamic(() => import("@/components/SpreadGraph"), {
   ssr: false,
   loading: () => <div className="shimmer" style={{ height: "100%", borderRadius: 8 }} />,
 });
+const UmapScatter = dynamic(() => import("@/components/UmapScatter"), { ssr: false, loading: () => <div className="shimmer" style={{height:280,borderRadius:8}} /> });
 
 type PanelTab = "trends" | "origins" | "timeline";
 
@@ -42,6 +44,14 @@ interface TrendNarrative {
 
 interface TrendsResponse {
   top_narratives: TrendNarrative[];
+}
+
+interface ClusterAutoScopeItem {
+  id: number;
+  label: string;
+  velocity: number;
+  score: number;
+  post_count: number;
 }
 
 interface SpreadEntry {
@@ -119,19 +129,27 @@ function confidenceColor(label?: "high" | "medium" | "low"): string {
 export default function ExplorePage() {
   const { activeTopic, setActiveTopic, setInvestigationContext, meta } = useSignalStore();
   const router = useRouter();
+  const { isNarrow } = useBreakpoint();
 
   const [clusters, setClusters] = useState<TopicCluster[]>([]);
   const [trends, setTrends] = useState<TrendNarrative[]>([]);
   const [origins, setOrigins] = useState<ClusterOrigin[]>([]);
   const [velocity, setVelocity] = useState<VelocityPoint[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const [topicQuery, setTopicQuery] = useState("");
+  const [clusterK, setClusterK] = useState(0);
+  const [maxClusters, setMaxClusters] = useState(0);
+  const [clusterAutoScopeItems, setClusterAutoScopeItems] = useState<ClusterAutoScopeItem[]>([]);
+  const [autoScopeBanner, setAutoScopeBanner] = useState<string | null>(null);
+  const [timelineSummary, setTimelineSummary] = useState<string>("");
+  const [timelineSummaryLoading, setTimelineSummaryLoading] = useState(false);
+  const [timelineDetailedSummary, setTimelineDetailedSummary] = useState<string>("");
+  const [timelineDetailedLoading, setTimelineDetailedLoading] = useState(false);
   const [spreadOpen, setSpreadOpen] = useState(false);
 
   const [activeTab, setActiveTab] = useState<PanelTab>("trends");
 
   const mapCanvasRef = useRef<HTMLDivElement>(null);
+  const didMount = useRef(false);
   const [mapDims, setMapDims] = useState({ w: 0, h: 0 });
 
   useEffect(() => {
@@ -153,7 +171,26 @@ export default function ExplorePage() {
       fetch("/api/velocity").then((r) => r.json()),
     ])
       .then(([clusterData, trendsData, originsData, velocityData]) => {
-        setClusters((clusterData.topics ?? []) as TopicCluster[]);
+        const clusterList = (Array.isArray(clusterData)
+          ? clusterData
+          : (clusterData.topics ?? [])) as Array<Record<string, unknown>>;
+
+        setClusters(clusterList as unknown as TopicCluster[]);
+        setMaxClusters(clusterList.filter((c) => Number(c.id) !== -1).length);
+
+        setClusterAutoScopeItems(
+          clusterList
+            .map((c) => {
+              const id = Number(c.id ?? -1);
+              const label = String(c.label ?? c.name ?? `topic #${id}`);
+              const velocity = Number(c.velocity ?? 0);
+              const score = Number(c.score ?? 0);
+              const post_count = Number(c.post_count ?? c.count ?? 0);
+              return { id, label, velocity, score, post_count };
+            })
+            .filter((c) => Number.isFinite(c.id) && c.id !== -1)
+        );
+
         setTrends(((trendsData as TrendsResponse).top_narratives ?? []).filter((t) => t.topic_id !== -1));
         setOrigins(((originsData as OriginsResponse).clusters ?? []).filter((o) => o.topic_id !== -1));
         setVelocity((velocityData ?? []) as VelocityPoint[]);
@@ -161,6 +198,59 @@ export default function ExplorePage() {
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (!didMount.current) {
+      didMount.current = true;
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      fetch(`/api/clusters?k=${clusterK}`)
+        .then((r) => r.json())
+        .then((clusterData) => {
+          const clusterList = (Array.isArray(clusterData)
+            ? clusterData
+            : (clusterData.topics ?? [])) as Array<Record<string, unknown>>;
+          setClusters(clusterList as unknown as TopicCluster[]);
+        })
+        .catch(console.error);
+    }, 300);
+
+    return () => window.clearTimeout(timer);
+  }, [clusterK]);
+
+  useEffect(() => {
+    if (loading) return;
+    if (typeof window === "undefined") return;
+
+    const sessionKey = "signal-explore-auto-scope-once";
+    if (window.sessionStorage.getItem(sessionKey) === "1") return;
+
+    // Respect persisted user scope from Zustand hydration.
+    if (activeTopic !== null && activeTopic !== undefined) {
+      window.sessionStorage.setItem(sessionKey, "1");
+      return;
+    }
+
+    if (!clusterAutoScopeItems.length) return;
+
+    const highestVelocity = clusterAutoScopeItems.reduce((best, cur) =>
+      cur.velocity > best.velocity ? cur : best
+    );
+
+    setActiveTopic(highestVelocity.id);
+    setAutoScopeBanner(
+      `Auto-scoped to highest velocity topic · ${highestVelocity.label} · click any bubble to change`
+    );
+    window.sessionStorage.setItem(sessionKey, "1");
+  }, [loading, activeTopic, clusterAutoScopeItems, setActiveTopic]);
+
+  useEffect(() => {
+    if (!autoScopeBanner) return;
+    const timer = window.setTimeout(() => setAutoScopeBanner(null), 4000);
+    return () => window.clearTimeout(timer);
+  }, [autoScopeBanner]);
 
   useEffect(() => {
     if (!mapCanvasRef.current) return;
@@ -182,24 +272,21 @@ export default function ExplorePage() {
 
   const topicById = useMemo(() => new Map(clusters.map((c) => [c.id, c])), [clusters]);
 
-  const topicSuggestions = useMemo(() => {
-    const q = topicQuery.trim().toLowerCase();
-    if (!q) return [] as TopicCluster[];
-    return clusters
-      .filter((c) => c.id !== -1)
-      .filter((c) => `${c.name} ${(c.top_words ?? []).join(" ")}`.toLowerCase().includes(q))
-      .slice(0, 6);
-  }, [topicQuery, clusters]);
+  const filteredTrends = useMemo(() => {
+    const allowedIds = new Set(clusters.map((c) => c.id));
+    const scopeFiltered = activeTopic === null
+      ? trends
+      : trends.filter((t) => t.topic_id === activeTopic);
+    return scopeFiltered.filter((t) => allowedIds.has(t.topic_id));
+  }, [trends, activeTopic, clusters]);
 
-  const filteredTrends = useMemo(
-    () => (activeTopic === null ? trends : trends.filter((t) => t.topic_id === activeTopic)),
-    [trends, activeTopic],
-  );
-
-  const filteredOrigins = useMemo(
-    () => (activeTopic === null ? origins : origins.filter((o) => o.topic_id === activeTopic)),
-    [origins, activeTopic],
-  );
+  const filteredOrigins = useMemo(() => {
+    const allowedIds = new Set(clusters.map((c) => c.id));
+    const scopeFiltered = activeTopic === null
+      ? origins
+      : origins.filter((o) => o.topic_id === activeTopic);
+    return scopeFiltered.filter((o) => allowedIds.has(o.topic_id));
+  }, [origins, activeTopic, clusters]);
 
   const velocityByTopic = useMemo(() => {
     const m = new Map<number, VelocityPoint[]>();
@@ -244,6 +331,83 @@ export default function ExplorePage() {
   }, [activeTopic, activeTopicName]);
 
   const totalVelocityPoints = velocity.filter((d) => d.topic_id !== -1).length;
+  const shouldStretchTrendCards = !isNarrow && filteredTrends.length > 0 && filteredTrends.length <= 8;
+
+  useEffect(() => {
+    if (activeTab !== "timeline") return;
+    if (!timelineRows.length) {
+      setTimelineSummary("");
+      setTimelineDetailedSummary("");
+      return;
+    }
+
+    const topRows = timelineRows.slice(0, 3);
+    const context = [
+      `Current scope: ${activeTopicLabel}.`,
+      `Visible timeline rows: ${timelineRows.length}.`,
+      `Top narrative snapshots: ${topRows
+        .map((row) => `${cleanTopicName(row.topic?.name ?? `topic #${row.id}`)} latest ${row.latest.toFixed(3)} across ${row.values.length} points`)
+        .join("; ")}.`,
+    ].join(" ");
+
+    const controller = new AbortController();
+    setTimelineSummaryLoading(true);
+    setTimelineDetailedSummary("");
+
+    fetch("/api/summary", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        context,
+        prompt: "Write 2 concise sentences explaining what these timeline trends imply for investigation prioritization.",
+      }),
+      signal: controller.signal,
+    })
+      .then(async (r) => {
+        if (!r.ok) throw new Error(`summary: ${r.status}`);
+        return r.json() as Promise<{ summary?: string }>;
+      })
+      .then((d) => setTimelineSummary((d.summary ?? "").trim()))
+      .catch((err: unknown) => {
+        if ((err as { name?: string }).name === "AbortError") return;
+        console.error("[/explore] timeline summary", err);
+      })
+      .finally(() => setTimelineSummaryLoading(false));
+
+    return () => controller.abort();
+  }, [activeTab, timelineRows, activeTopicLabel]);
+
+  function generateDetailedTimelineSummary() {
+    if (!timelineRows.length || timelineDetailedLoading) return;
+
+    const topRows = timelineRows.slice(0, 5);
+    const context = [
+      `Current scope: ${activeTopicLabel}.`,
+      `Timeline rows: ${timelineRows.length}.`,
+      `Top rows by latest velocity: ${topRows
+        .map((row) => `${cleanTopicName(row.topic?.name ?? `topic #${row.id}`)} latest ${row.latest.toFixed(3)} points ${row.values.length}`)
+        .join("; ")}.`,
+    ].join(" ");
+
+    setTimelineDetailedLoading(true);
+    fetch("/api/summary", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        context,
+        prompt: "Write a detailed 5-6 sentence timeline analysis. Include where momentum is accelerating or cooling, what to investigate next, and one caution about over-interpreting sparse points.",
+      }),
+    })
+      .then(async (r) => {
+        if (!r.ok) throw new Error(`summary: ${r.status}`);
+        return r.json() as Promise<{ summary?: string }>;
+      })
+      .then((d) => setTimelineDetailedSummary((d.summary ?? "").trim()))
+      .catch((err) => {
+        console.error("[/explore] detailed timeline summary", err);
+      })
+      .finally(() => setTimelineDetailedLoading(false));
+  }
 
   function selectTopic(topicId: number, source: "trends" | "origins" | "manual") {
     setActiveTopic(topicId);
@@ -258,7 +422,7 @@ export default function ExplorePage() {
 
   return (
     <Shell>
-      <div style={{ flex: 1, minHeight: 0, height: "100%", overflow: "hidden", padding: "10px 16px 12px", display: "flex", flexDirection: "column" }}>
+      <div style={{ flex: 1, minHeight: 0, overflow: "visible", padding: "10px 16px 40px", display: "flex", flexDirection: "column" }}>
         <div style={{ marginBottom: 8 }}>
           <div
             style={{
@@ -305,55 +469,143 @@ export default function ExplorePage() {
               },
             ]}
           />
+
+          {autoScopeBanner && (
+            <div
+              style={{
+                marginTop: 8,
+                border: "1px solid rgba(29,158,117,0.35)",
+                background: "rgba(29,158,117,0.08)",
+                borderRadius: 8,
+                padding: "6px 10px",
+                fontSize: 11,
+                color: "var(--text-soft)",
+                fontFamily: "var(--font-mono)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 10,
+              }}
+            >
+              <span>{autoScopeBanner}</span>
+              <button
+                type="button"
+                onClick={() => setAutoScopeBanner(null)}
+                style={{
+                  border: "none",
+                  background: "transparent",
+                  color: "var(--muted)",
+                  cursor: "pointer",
+                  fontSize: 12,
+                  fontFamily: "var(--font-mono)",
+                }}
+                aria-label="Dismiss auto-scope banner"
+              >
+                x
+              </button>
+            </div>
+          )}
         </div>
 
-        <div style={{ flex: 1, minHeight: 0, display: "flex", gap: 10 }}>
+        <div
+          style={{
+            display: "flex",
+            minHeight: isNarrow ? 600 : undefined,
+            gap: 10,
+            flexDirection: isNarrow ? "column" : "row",
+            alignItems: "stretch",
+          }}
+        >
           <div
             style={{
-              width: 360,
+              width: isNarrow ? "100%" : "clamp(260px, 28vw, 380px)",
               flexShrink: 0,
+              display: "flex",
+              flexDirection: "column",
               border: "1px solid var(--border)",
               borderRadius: "var(--radius-md)",
               background: "var(--surface)",
-              minHeight: 0,
-              overflowY: "auto",
+              minHeight: isNarrow ? "auto" : undefined,
+              overflowY: "visible",
               overflowX: "hidden",
             }}
           >
-            <div style={{ position: "sticky", top: 0, zIndex: 5, padding: "8px 10px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, background: "var(--surface)" }}>
-              <div style={{ display: "flex", gap: 6 }}>
-            {[
-              { id: "trends", label: "TRENDS" },
-              { id: "origins", label: "ORIGINS" },
-              { id: "timeline", label: "TIMELINE" },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                className={`chip ${activeTab === tab.id ? "active" : ""}`}
-                onClick={() => setActiveTab(tab.id as PanelTab)}
-                style={{ border: "none", cursor: "pointer" }}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
+            <div style={{ position: "relative", padding: "8px 10px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, background: "var(--surface)" }}>
+              <div style={{ width: "100%", display: "grid", gap: 6 }}>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {[
+                    { id: "trends", label: "TRENDS" },
+                    { id: "origins", label: "ORIGINS" },
+                    { id: "timeline", label: "TIMELINE" },
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      className={`chip ${activeTab === tab.id ? "active" : ""}`}
+                      onClick={() => setActiveTab(tab.id as PanelTab)}
+                      style={{ border: "none", cursor: "pointer" }}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
 
-          {activeTopic !== null && (
-            <button
-              className="chip active"
-              onClick={() => setActiveTopic(null)}
-              style={{ border: "none", cursor: "pointer" }}
-            >
-              Scope: {activeTopicName ?? `topic #${activeTopic}`} ×
-            </button>
-          )}
+                <div style={{ padding: "4px 0 0", display: "grid", gridTemplateColumns: "auto 1fr auto", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 10, color: "var(--muted)", fontFamily: "var(--font-mono)", whiteSpace: "nowrap" }}>
+                    clusters: {clusterK === 0 ? "all" : clusterK}
+                  </span>
+                  <input
+                    type="range"
+                    min={2}
+                    max={maxClusters >= 2 ? maxClusters : 20}
+                    value={clusterK === 0 ? (maxClusters >= 2 ? maxClusters : 20) : clusterK}
+                    onChange={(e) => setClusterK(Number(e.target.value))}
+                    style={{ flex: 1, accentColor: "var(--teal)", cursor: "pointer" }}
+                  />
+                  {clusterK !== 0 && (
+                    <button
+                      onClick={() => setClusterK(0)}
+                      style={{
+                        fontSize: 10,
+                        color: "var(--muted)",
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        fontFamily: "var(--font-mono)",
+                      }}
+                    >
+                      reset
+                    </button>
+                  )}
+                </div>
+
+                {activeTopic !== null && (
+                  <button
+                    className="chip active"
+                    onClick={() => setActiveTopic(null)}
+                    style={{ border: "none", cursor: "pointer", justifySelf: "start" }}
+                  >
+                    Scope: {activeTopicName ?? `topic #${activeTopic}`} ×
+                  </button>
+                )}
+              </div>
             </div>
 
-            <div style={{ padding: 10, display: "grid", gap: 8 }}>
+            <div style={{ padding: 10, display: "flex", flexDirection: "column", gap: 8, flex: 1, minHeight: 0 }}>
           {activeTab === "trends" && (
             <>
+              <div
+                style={shouldStretchTrendCards
+                  ? {
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 8,
+                      flex: 1,
+                      minHeight: 0,
+                    }
+                  : { display: "flex", flexDirection: "column", gap: 8 }}
+              >
               {filteredTrends.map((t, idx) => (
-                <div key={t.topic_id} style={{ border: "1px solid var(--border)", borderRadius: 8, padding: "8px 10px", background: "var(--surface-2)" }}>
+                <div key={t.topic_id} style={{ border: "1px solid var(--border)", borderRadius: 8, padding: "8px 10px", background: "var(--surface-2)", flex: shouldStretchTrendCards ? "1 1 0" : undefined, display: "grid", alignContent: "start", gap: 4 }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                       <span style={{ fontSize: 11, color: "var(--dim)", fontFamily: "var(--font-mono)" }}>{idx + 1}</span>
@@ -409,6 +661,7 @@ export default function ExplorePage() {
                   </div>
                 </div>
               ))}
+              </div>
 
               {!loading && filteredTrends.length === 0 && (
                 <div style={{ fontSize: 12, color: "var(--muted)", fontFamily: "var(--font-mono)" }}>No trend cards for this scope.</div>
@@ -469,6 +722,33 @@ export default function ExplorePage() {
               <div style={{ fontSize: 11, color: "var(--text-soft)", fontFamily: "var(--font-mono)", opacity: 0.9 }}>
                 {activeTopic === null ? "All topic timelines" : `${activeTopicLabel} timeline`} · click a row to scope the map.
               </div>
+              <div style={{ border: "1px solid var(--border)", borderRadius: 8, background: "var(--surface-2)", padding: "8px 10px", display: "grid", gap: 8 }}>
+                <div style={{ fontSize: 12, color: "var(--text-soft)", lineHeight: 1.6, fontFamily: "var(--font-serif)", fontStyle: "italic" }}>
+                  {timelineSummaryLoading
+                    ? "Generating timeline summary..."
+                    : (timelineSummary || "Timeline summary will appear after data loads.")}
+                </div>
+                <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                  <button
+                    className="chip"
+                    onClick={generateDetailedTimelineSummary}
+                    style={{ cursor: timelineDetailedLoading ? "not-allowed" : "pointer", opacity: timelineDetailedLoading ? 0.6 : 1 }}
+                    disabled={timelineDetailedLoading || timelineRows.length === 0}
+                  >
+                    {timelineDetailedLoading ? "Generating..." : "Detailed summary"}
+                  </button>
+                  {!!timelineDetailedSummary && (
+                    <span style={{ fontSize: 10, color: "var(--muted)", fontFamily: "var(--font-mono)" }}>
+                      detailed analysis ready
+                    </span>
+                  )}
+                </div>
+                {!!timelineDetailedSummary && (
+                  <div style={{ borderTop: "1px solid var(--border)", paddingTop: 8, fontSize: 12, color: "var(--text-soft)", lineHeight: 1.7, fontFamily: "var(--font-serif)" }}>
+                    {timelineDetailedSummary}
+                  </div>
+                )}
+              </div>
               <div style={{ display: "grid", gap: 8 }}>
                 {timelineRows.map((row) => (
                   <button
@@ -497,68 +777,6 @@ export default function ExplorePage() {
           </div>
 
           <div style={{ flex: 1, minWidth: 0, minHeight: 0, display: "flex", flexDirection: "column", gap: 10 }}>
-            <div style={{ position: "relative", maxWidth: 520 }}>
-              <input
-                value={topicQuery}
-                onChange={(e) => setTopicQuery(e.target.value)}
-                placeholder="Search topic or keyword to focus map"
-                style={{
-                  width: "100%",
-                  background: "#0D1014",
-                  border: "1px solid #1E2530",
-                  borderRadius: 10,
-                  padding: "9px 11px",
-                  color: "var(--text)",
-                  fontSize: 12,
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && topicSuggestions.length > 0) {
-                    selectTopic(topicSuggestions[0].id, "manual");
-                    setTopicQuery("");
-                  }
-                }}
-              />
-              {topicSuggestions.length > 0 && (
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "calc(100% + 6px)",
-                    left: 0,
-                    right: 0,
-                    zIndex: 30,
-                    background: "#111418",
-                    border: "1px solid #1E2530",
-                    borderRadius: 10,
-                    overflow: "hidden",
-                  }}
-                >
-                  {topicSuggestions.map((topic) => (
-                    <button
-                      key={topic.id}
-                      onClick={() => {
-                        selectTopic(topic.id, "manual");
-                        setTopicQuery("");
-                      }}
-                      style={{
-                        width: "100%",
-                        textAlign: "left",
-                        background: "transparent",
-                        border: "none",
-                        borderBottom: "1px solid #1E2530",
-                        padding: "8px 10px",
-                        color: "#C8D3E0",
-                        cursor: "pointer",
-                        fontSize: 12,
-                      }}
-                    >
-                      <span style={{ color: topic.color, fontFamily: "var(--font-mono)", marginRight: 8 }}>#{topic.id}</span>
-                      {cleanTopicName(topic.name)}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
             <div
               style={{
                 border: "1px solid var(--border)",
@@ -584,7 +802,8 @@ export default function ExplorePage() {
             <div
               style={{
                 flex: "1 1 auto",
-                minHeight: 300,
+                minHeight: isNarrow ? 420 : 300,
+                height: isNarrow ? 420 : undefined,
                 position: "relative",
                 overflow: "hidden",
                 border: "1px solid var(--border)",
@@ -614,6 +833,8 @@ export default function ExplorePage() {
             >
               <ClusterLegend clusters={clusters} />
             </div>
+
+            <UmapScatter clusters={clusters} />
 
             <div
               style={{

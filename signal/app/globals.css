@@ -60,7 +60,11 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body {
-  height: 100%;
+  height: auto;
+  min-height: 100vh;
+  min-width: 640px;
+  overflow-x: hidden;
+  overflow-y: auto;
   font-family: var(--font-sans);
   background: var(--bg);
   color: var(--text);

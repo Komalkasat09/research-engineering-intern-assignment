@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Shell from "@/components/Shell";
 import StatRow from "@/components/StatRow";
 import { useSignalStore } from "@/lib/store";
+import { useBreakpoint } from "@/lib/useBreakpoint";
 
 interface LifecyclePhase {
   phase: string;
@@ -135,6 +136,7 @@ function peakPhase(phases: LifecyclePhase[]): LifecyclePhase | null {
 
 export default function LifecyclePage() {
   const { activeTopic, setActiveTopic } = useSignalStore();
+  const { width } = useBreakpoint();
   const [data, setData] = useState<LifecycleResponse>(FALLBACK);
   const [loading, setLoading] = useState(true);
   const [selectedTopicId, setSelectedTopicId] = useState<number | null>(null);
@@ -186,6 +188,7 @@ export default function LifecyclePage() {
   }, [allClusters, effectiveTopic]);
 
   const isScopeEmpty = effectiveTopic !== null && scopedClusters.length === 0;
+  const phaseGridColumns = width < 600 ? "1fr" : width < 900 ? "repeat(2, 1fr)" : "repeat(4, 1fr)";
 
   const clusters = isScopeEmpty ? allClusters : scopedClusters;
 
@@ -216,7 +219,7 @@ export default function LifecyclePage() {
         <span className="page-header__meta">sentiment arc · toxicity gradient · phase detection</span>
       </div>
 
-      <div ref={topRef} style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "12px 24px 72px", display: "grid", gap: 12 }}>
+      <div ref={topRef} style={{ padding: "10px 16px 28px", display: "grid", gap: 10 }}>
         <StatRow
           stats={[
             {
@@ -244,13 +247,6 @@ export default function LifecyclePage() {
               value: data.corpus_stats.high_toxicity_count,
               delta: "toxicity > 0.7",
               deltaColor: "var(--amber)",
-              mono: true,
-            },
-            {
-              label: "RAGE AMPLIFICATION",
-              value: `${data.corpus_stats.rage_amplification.toFixed(2)}x`,
-              delta: "toxic vs civil upvotes",
-              deltaColor: "var(--coral)",
               mono: true,
             },
           ]}
@@ -283,7 +279,7 @@ export default function LifecyclePage() {
         </div>
 
         {!loading && allClusters.length > 0 && (
-          <section className="viz-panel" style={{ padding: 12, display: "grid", gap: 8, borderColor: "rgba(29,158,117,0.35)", background: "rgba(29,158,117,0.04)" }}>
+          <section className="viz-panel" style={{ padding: 10, display: "grid", gap: 7, borderColor: "rgba(29,158,117,0.35)", background: "rgba(29,158,117,0.04)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
               <div style={{ fontSize: 11, color: "var(--text-soft)", fontFamily: "var(--font-mono)", letterSpacing: "0.08em" }}>
                 TOPIC SELECTOR
@@ -398,7 +394,7 @@ export default function LifecyclePage() {
           </div>
         )}
 
-        <div style={{ display: "grid", gap: 12 }}>
+        <div style={{ display: "grid", gap: 10 }}>
         {clusters.map((cluster) => {
           const badge = toxicityBadge(cluster.avg_toxicity);
           return (
@@ -406,9 +402,9 @@ export default function LifecyclePage() {
               key={cluster.topic_id}
               className="viz-panel"
               style={{
-                padding: 12,
+                padding: 10,
                 display: "grid",
-                gap: 12,
+                gap: 10,
                 borderColor: `${cluster.color}44`,
               }}
             >
@@ -441,7 +437,7 @@ export default function LifecyclePage() {
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+                  gridTemplateColumns: phaseGridColumns,
                   gap: 8,
                 }}
               >
@@ -453,7 +449,7 @@ export default function LifecyclePage() {
                   const mood = moodLabel(phase.avg_sentiment, phase.avg_toxicity);
 
                   return (
-                    <div key={`${cluster.topic_id}-${phase.phase}`} style={{ border: "1px solid var(--border)", borderRadius: 8, background: "var(--surface-2)", padding: "9px 10px", display: "grid", gap: 6, minHeight: 108 }}>
+                    <div key={`${cluster.topic_id}-${phase.phase}`} style={{ border: "1px solid var(--border)", borderRadius: 8, background: "var(--surface-2)", padding: "8px 9px", display: "grid", gap: 5, minHeight: 94 }}>
                       <div>
                         <div style={{ fontSize: 13, color: "var(--text)", fontWeight: 500 }}>{phase.phase}</div>
                         <div style={{ fontSize: 10, color: "var(--text-soft)", fontFamily: "var(--font-mono)" }}>
@@ -485,14 +481,14 @@ export default function LifecyclePage() {
 
               {showEvidenceCards && (
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 8 }}>
-                  <div style={{ border: "1px solid rgba(216,90,48,0.45)", borderRadius: 8, background: "rgba(216,90,48,0.08)", padding: "9px 11px", display: "grid", gap: 7, minHeight: 110 }}>
+                  <div style={{ border: "1px solid rgba(216,90,48,0.45)", borderRadius: 8, background: "rgba(216,90,48,0.08)", padding: "8px 10px", display: "grid", gap: 6, minHeight: 96 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <span style={{ fontSize: 10, color: "#D85A30", fontFamily: "var(--font-mono)", letterSpacing: "0.05em" }}>MOST TOXIC POST</span>
                       <span style={{ fontSize: 10, color: "#D85A30", border: "1px solid rgba(216,90,48,0.5)", borderRadius: 999, padding: "2px 7px", fontFamily: "var(--font-mono)" }}>
                         T:{cluster.most_toxic_post.toxicity.toFixed(2)}
                       </span>
                     </div>
-                    <div style={{ fontSize: 12, color: "var(--text-soft)", fontStyle: "italic", fontFamily: "var(--font-serif)", lineHeight: 1.45 }}>
+                    <div style={{ fontSize: 11, color: "var(--text-soft)", fontStyle: "italic", fontFamily: "var(--font-serif)", lineHeight: 1.4 }}>
                       "{clipped(cluster.most_toxic_post.text)}"
                     </div>
                     <div style={{ fontSize: 10, color: "var(--text-soft)", fontFamily: "var(--font-mono)", marginTop: "auto" }}>
@@ -500,14 +496,14 @@ export default function LifecyclePage() {
                     </div>
                   </div>
 
-                  <div style={{ border: "1px solid rgba(29,158,117,0.45)", borderRadius: 8, background: "rgba(29,158,117,0.08)", padding: "9px 11px", display: "grid", gap: 7, minHeight: 110 }}>
+                  <div style={{ border: "1px solid rgba(29,158,117,0.45)", borderRadius: 8, background: "rgba(29,158,117,0.08)", padding: "8px 10px", display: "grid", gap: 6, minHeight: 96 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <span style={{ fontSize: 10, color: "#1D9E75", fontFamily: "var(--font-mono)", letterSpacing: "0.05em" }}>MOST VIRAL POST</span>
                       <span style={{ fontSize: 10, color: "#1D9E75", border: "1px solid rgba(29,158,117,0.5)", borderRadius: 999, padding: "2px 7px", fontFamily: "var(--font-mono)" }}>
                         ↑{cluster.most_viral_post.score.toLocaleString()}
                       </span>
                     </div>
-                    <div style={{ fontSize: 12, color: "var(--text-soft)", fontStyle: "italic", fontFamily: "var(--font-serif)", lineHeight: 1.45 }}>
+                    <div style={{ fontSize: 11, color: "var(--text-soft)", fontStyle: "italic", fontFamily: "var(--font-serif)", lineHeight: 1.4 }}>
                       "{clipped(cluster.most_viral_post.text)}"
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 10, color: "var(--text-soft)", fontFamily: "var(--font-mono)", marginTop: "auto" }}>
@@ -524,7 +520,7 @@ export default function LifecyclePage() {
         })}
         </div>
 
-        <section className="viz-panel" style={{ padding: 14, display: "grid", gap: 10, borderColor: "rgba(186,117,23,0.5)", background: "linear-gradient(180deg, rgba(186,117,23,0.08) 0%, rgba(186,117,23,0.03) 100%)", minHeight: 84 }}>
+        <section className="viz-panel" style={{ padding: 10, display: "grid", gap: 8, borderColor: "rgba(186,117,23,0.5)", background: "linear-gradient(180deg, rgba(186,117,23,0.08) 0%, rgba(186,117,23,0.03) 100%)", minHeight: 72 }}>
           <div style={{ fontSize: 10, color: "var(--text-soft)", fontFamily: "var(--font-mono)", letterSpacing: "0.1em" }}>
             TOXICITY SCALE
           </div>
@@ -543,7 +539,7 @@ export default function LifecyclePage() {
                 LEGACY LIFECYCLE SUMMARY
               </div>
               <div style={{ fontSize: 12, color: "var(--text-soft)" }}>
-                Previous narrative lifecycle data (origin → acceleration → amplification → mutation), rendered inline.
+                Previous narrative lifecycle data (origin → acceleration → mutation), rendered inline.
               </div>
             </div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -596,10 +592,6 @@ export default function LifecyclePage() {
                     <div style={{ fontSize: 11, color: "var(--text-soft)", marginTop: 4 }}>{peak ? `${peak.phase} · ${peak.post_count} posts` : "n/a"}</div>
                   </div>
                   <div style={{ border: "1px solid var(--border)", borderRadius: 8, padding: "8px" }}>
-                    <div style={{ fontSize: 10, color: "var(--muted)", fontFamily: "var(--font-mono)" }}>AMPLIFICATION</div>
-                    <div style={{ fontSize: 11, color: "var(--text-soft)", marginTop: 4 }}>u/{preview.most_viral_post.author} · ↑{preview.most_viral_post.score.toLocaleString()}</div>
-                  </div>
-                  <div style={{ border: "1px solid var(--border)", borderRadius: 8, padding: "8px" }}>
                     <div style={{ fontSize: 10, color: "var(--muted)", fontFamily: "var(--font-mono)" }}>MUTATION</div>
                     <div style={{ fontSize: 11, color: toxDelta >= 0 ? "var(--coral)" : "var(--teal)", marginTop: 4 }}>toxicity shift {toxDelta >= 0 ? "+" : ""}{toxDelta.toFixed(3)}</div>
                   </div>
@@ -648,13 +640,6 @@ export default function LifecyclePage() {
                       <div style={{ fontSize: 10, color: "var(--muted)", fontFamily: "var(--font-mono)" }}>ACCELERATION</div>
                       <div style={{ fontSize: 11, color: "var(--text-soft)", marginTop: 4 }}>
                         {peak ? `${peak.phase} · ${peak.post_count} posts` : "n/a"}
-                      </div>
-                    </div>
-
-                    <div style={{ border: "1px solid var(--border)", borderRadius: 8, padding: "8px" }}>
-                      <div style={{ fontSize: 10, color: "var(--muted)", fontFamily: "var(--font-mono)" }}>AMPLIFICATION</div>
-                      <div style={{ fontSize: 11, color: "var(--text-soft)", marginTop: 4 }}>
-                        u/{cluster.most_viral_post.author} · ↑{cluster.most_viral_post.score.toLocaleString()}
                       </div>
                     </div>
 

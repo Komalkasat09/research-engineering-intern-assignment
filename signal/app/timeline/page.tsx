@@ -87,6 +87,8 @@ export default function TimelinePage() {
     "Velocity peaks correlate with major political events — elections, policy announcements, and viral controversies drive measurable shifts in how communities discuss political topics online."
   );
   const [insightLoading, setInsightLoading] = useState(false);
+  const [detailedInsightText, setDetailedInsightText] = useState("");
+  const [detailedInsightLoading, setDetailedInsightLoading] = useState(false);
 
   // ── Load all data in parallel ────────────────────────────────────
   useEffect(() => {
@@ -190,6 +192,39 @@ export default function TimelinePage() {
 
     return () => controller.abort();
   }, [filteredVelocity, activeTopic, topicNames]);
+
+  function generateDetailedSummary() {
+    if (!filteredVelocity.length || detailedInsightLoading) return;
+
+    const peakWeek = peakVelocityWeek(filteredVelocity);
+    const averageVelocity = avgVelocity(filteredVelocity);
+    const highVelWeeks = highVelocityCount(filteredVelocity);
+    const topicName = activeTopic !== null
+      ? (topicNames[activeTopic] ?? `topic #${activeTopic}`)
+      : "all topics";
+
+    setDetailedInsightLoading(true);
+    fetch("/api/summary", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        context: `Narrative velocity data for ${topicName}. Peak week: ${peakWeek}. Average drift: ${averageVelocity}. High velocity weeks (>0.25): ${highVelWeeks} of ${filteredVelocity.length}.`,
+        prompt: "Write a detailed 5-6 sentence analyst note. Explain momentum shifts, likely interpretation risks, and two concrete follow-up checks.",
+      }),
+    })
+      .then(async (r) => {
+        if (!r.ok) throw new Error(`summary: ${r.status}`);
+        return r.json() as Promise<{ summary?: string }>;
+      })
+      .then((d) => {
+        const summary = (d.summary ?? "").trim();
+        if (summary) setDetailedInsightText(summary);
+      })
+      .catch((err) => {
+        console.error("[/timeline] detailed summary", err);
+      })
+      .finally(() => setDetailedInsightLoading(false));
+  }
 
   return (
     <Shell>
@@ -452,6 +487,30 @@ export default function TimelinePage() {
               >
                 {insightLoading ? "Signal is generating a plain-language summary from the current velocity metrics..." : insightText}
               </p>
+              <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8, flexWrap: "wrap" }}>
+                <button
+                  className="chip"
+                  type="button"
+                  onClick={generateDetailedSummary}
+                  disabled={detailedInsightLoading || filteredVelocity.length === 0}
+                  style={{ cursor: detailedInsightLoading ? "not-allowed" : "pointer", opacity: detailedInsightLoading ? 0.65 : 1 }}
+                >
+                  {detailedInsightLoading ? "Generating..." : "Detailed summary"}
+                </button>
+              </div>
+              {!!detailedInsightText && (
+                <p
+                  style={{
+                    fontSize: 12,
+                    fontFamily: "var(--font-serif)",
+                    color: "#8FA0B6",
+                    lineHeight: 1.75,
+                    marginBottom: 8,
+                  }}
+                >
+                  {detailedInsightText}
+                </p>
+              )}
               <div
                 style={{
                   fontSize:   10,

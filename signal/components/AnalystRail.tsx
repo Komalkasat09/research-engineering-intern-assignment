@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import MonitorPanel from "@/components/MonitorPanel";
 
 interface AlertItem {
   topic_id?: number;
@@ -68,6 +69,8 @@ export default function AnalystRail({
       </div>
 
       <div style={{ padding: 12, display: "grid", gap: 10 }}>
+        <MonitorPanel />
+
         <div className="viz-panel" style={{ borderRadius: 8 }}>
           <div className="viz-panel__header">
             <span className="viz-panel__title">Weekly brief</span>

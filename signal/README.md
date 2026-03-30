@@ -21,10 +21,10 @@ This section is intentionally formatted to match the assignment checklist.
 
 Add screenshots of key views below (replace placeholders with real images in your repo):
 
-![Explore Workspace](signal/public/workspace explorer.png)
-![Live Feed Injector](/Users/komalkasat09/Desktop/simppl/signal/public/live-feed-injector.png)
-![Posts Explorer Both Mode](/Users/komalkasat09/Desktop/simppl/signal/public/post-explorer.png)
-![Ask Signal](signal/public/ask-signal.png)
+![Explore Workspace](/workspace%20explorer.png)
+![Live Feed Injector](/live-feed-injector.png)
+![Posts Explorer Both Mode](/post-explorer.png)
+![Ask Signal](/ask-signal.png)
 
 ### 3. Text-based system design explanation and thought process
 
@@ -92,6 +92,19 @@ Signal is organized around a complete investigation workflow:
 4. Investigate raw posts with explainable matching
 5. Send evidence to Ask Signal for analyst-style synthesis
 
+## Recent Updates (March 2026)
+
+- Ask Signal retrieval upgraded to semantic-expanded scoring over `data/faiss_meta.json` (serverless-safe FAISS metadata search).
+- Ask Signal request handling now validates empty/very-short queries and adds non-English detection with same-language responses.
+- Ask Signal responses now link post IDs like `[1ipgoly]` to `/posts?highlight=<id>` for direct evidence jumps.
+- Posts explorer now supports URL-based highlighting (`/posts?highlight=<post_id>`) with auto-scroll and temporary visual emphasis.
+- Timeline insight text moved from static copy to live model summaries via `/api/summary`.
+- Timeline page and Explore timeline tab now include generated summaries plus on-demand detailed summary generation.
+- Explore workspace now supports dynamic cluster count (`/api/clusters?k=<n>`) and cluster-aware filtering for trends/origins.
+- Explore includes interactive UMAP scatter with topic scoping and click-to-scope interactions.
+- Client state now includes persisted monitor query/alert primitives for scheduled monitoring workflows.
+- Monitor agent panel is now visible in the Analyst Workflow right rail across pages.
+
 ## Feature Coverage
 
 - Explore workspace with narrative map + context rails.
@@ -99,6 +112,7 @@ Signal is organized around a complete investigation workflow:
 - Live feed injector with Reddit fetch + cluster assignment.
 - Posts explorer with Dataset / Live / Both modes.
 - Ask Signal with retrieval grounding, follow-up chips, and analyst alerts.
+- Analyst Workflow rail with monitor controls, tracked queries, and delta alert cards.
 - Narrative lifecycle (new): sentiment arc + toxicity gradient + phase cards.
 - Narrative lifecycle (legacy): origin/acceleration/amplification/mutation analysis.
 - Fingerprint simulation across community archetypes.
@@ -112,6 +126,8 @@ Signal is organized around a complete investigation workflow:
 - Purpose: serves as the investigation command center where analysts select a topic and keep a shared narrative context.
 - What it provides:
 	- Topic-level orientation with supporting trend/context panels.
+	- Cluster count control with API-backed refetch (`k` parameter).
+	- Interactive UMAP scatter for post-level cluster geometry and topic scoping.
 	- A shared scope that propagates to downstream views (lifecycle, posts, chat, live feed).
 	- Quick pivoting into deeper analysis routes without losing investigation state.
 - Analyst value: reduces context switching by maintaining one continuous thread from discovery to evidence review.
@@ -192,6 +208,7 @@ Signal is organized around a complete investigation workflow:
 	- Three source modes: Dataset, Live, and Both.
 	- Interleaved comparison between historical and newly ingested live posts.
 	- Explainability cues such as match reasons and confidence context.
+	- Deep-link highlight mode via `?highlight=<post_id>` with smooth scroll to matching evidence card.
 	- Per-post handoff to Ask Signal using prefilled evidence prompts.
 - Analyst value: provides traceable evidence review before synthesis decisions.
 
@@ -199,10 +216,13 @@ Signal is organized around a complete investigation workflow:
 
 - Purpose: generate analyst-style synthesis grounded in retrieved evidence.
 - What it provides:
-	- Retrieval-grounded answers constrained by available context.
+	- Retrieval-grounded answers constrained by semantic evidence from `faiss_meta.json`.
 	- Topic-aware prompting when a scoped narrative is active.
+	- Input validation for empty/under-specified queries.
+	- Non-English query handling with same-language response behavior.
 	- Follow-up question chips to continue investigation quickly.
 	- Analyst alerts when risk patterns (coordination/velocity style cues) are present.
+	- Clickable post-ID evidence links that jump directly to highlighted cards in `/posts`.
 - Analyst value: turns scattered evidence into concise hypotheses and next-step questions.
 
 ### 12. Benchmark / Evaluation (`/benchmark`)
@@ -213,7 +233,17 @@ Signal is organized around a complete investigation workflow:
 	- A repeatable place to inspect behavior during testing or demos.
 - Analyst value: supports reproducibility and reviewer confidence.
 
-### 13. Legacy Direct Views (`/map`, `/timeline`, `/trends`, `/origins`)
+### 13. Analyst Workflow Rail (global right sidebar)
+
+- Purpose: provide always-available analyst tooling while navigating any page.
+- What it provides:
+	- Weekly brief and active alert snapshots.
+	- Monitor agent controls (on/off + interval chips).
+	- Saved monitor queries scoped to active topic at creation time.
+	- Delta alert cards with post previews and one-click jump to highlighted post evidence.
+- Analyst value: keeps monitoring and triage in view without leaving the current analysis page.
+
+### 14. Legacy Direct Views (`/map`, `/timeline`, `/trends`, `/origins`)
 
 - Purpose: keep direct access to specialized analysis pages used in earlier flows.
 - What they provide:
@@ -221,7 +251,7 @@ Signal is organized around a complete investigation workflow:
 	- Trend and origin focused decomposition outside the unified workspace.
 - Analyst value: allows targeted deep-dives when a single lens is preferred over multi-panel workflows.
 
-### 14. Report and Evidence APIs (`/api/report/evidence`, `/api/report/weekly-brief`)
+### 15. Report and Evidence APIs (`/api/report/evidence`, `/api/report/weekly-brief`)
 
 - Purpose: export investigation artifacts for analyst reporting.
 - What they provide:
@@ -263,12 +293,22 @@ Signal is organized around a complete investigation workflow:
 - Shared Zustand state for active topic and investigation context
 - Topic scope flows from explore/analysis into chat and posts explorer
 
+### Monitor agent workflow
+
+- Global right rail includes the Monitor panel on all pages rendered within Shell.
+- Monitor can be toggled on/off with 5/15/30 minute intervals.
+- Analysts can save scoped queries and receive delta alerts from `/api/live/inject` polling.
+- Alert previews link directly to `/posts?highlight=<post_id>` for rapid evidence review.
+
 ### Ask Signal enhancements
 
-- Retrieval-grounded responses
+- Semantic-expanded retrieval grounded in `data/faiss_meta.json`
 - Analyst alert injection for coordination/velocity signals
 - Follow-up question generation (rendered as clickable chips)
 - Context-aware scoped prompts
+- Input validation for empty/too-short prompts
+- Same-language response behavior for non-English queries
+- Clickable post-ID links to highlighted post evidence cards
 
 ### Semantic retrieval zero-overlap checks
 
@@ -320,10 +360,17 @@ Implemented API routes include:
 - `/api/posts/search`
 - `/api/report/evidence`
 - `/api/report/weekly-brief`
+- `/api/summary`
 - `/api/stance`
 - `/api/trends`
 - `/api/umap`
 - `/api/velocity`
+
+Notable API behavior updates:
+
+- `/api/clusters` supports optional `k` query parameter for top-N cluster payloads.
+- `/api/summary` generates model-based narrative summaries for timeline context blocks.
+- `/api/chat` returns analyst/risk headers plus non-English detection header when applicable.
 
 ## Data Artifacts
 
@@ -413,6 +460,7 @@ Pipeline stages:
 - Use `/explore` as the default investigation entry point.
 - Use `/analysis/livefeed` to ingest and classify real-time Reddit posts.
 - Use `/posts` in Both mode to compare historical corpus posts with live classified posts.
+- Use `/posts?highlight=<post_id>` to jump to and temporarily highlight evidence cards.
 - Use Ask Signal for synthesis and follow-up investigative framing.
 
 ## Similar Platforms Studied

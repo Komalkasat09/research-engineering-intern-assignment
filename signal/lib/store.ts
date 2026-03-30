@@ -18,6 +18,30 @@ export interface InvestigationContext {
   createdAt: number;
 }
 
+export interface MonitorQuery {
+  id: string;
+  query: string;
+  topicFilter: number | null;
+  createdAt: number;
+}
+
+export interface MonitorAlertPost {
+  post_id: string;
+  title: string;
+  cluster_label: string;
+  score: number;
+}
+
+export interface MonitorAlert {
+  id: string;
+  query: string;
+  newPostCount: number;
+  topCluster: string;
+  detectedAt: number;
+  posts: MonitorAlertPost[];
+  dismissed: boolean;
+}
+
 interface SignalStore {
   activeTopic:    number | null;
   setActiveTopic: (id: number | null) => void;
@@ -49,6 +73,19 @@ interface SignalStore {
   showLiveLayer:   boolean;
   setShowLiveLayer: (show: boolean) => void;
   toggleShowLiveLayer: () => void;
+  savedMonitorQueries: MonitorQuery[];
+  addMonitorQuery: (query: string, topicFilter: number | null) => void;
+  removeMonitorQuery: (id: string) => void;
+  monitorActive: boolean;
+  setMonitorActive: (active: boolean) => void;
+  monitorIntervalMinutes: number;
+  setMonitorIntervalMinutes: (n: number) => void;
+  monitorAlerts: MonitorAlert[];
+  addMonitorAlert: (alert: Omit<MonitorAlert, "id" | "dismissed">) => void;
+  dismissMonitorAlert: (id: string) => void;
+  clearMonitorAlerts: () => void;
+  monitorLastRun: Record<string, number>;
+  setMonitorLastRun: (queryId: string, ts: number) => void;
 }
 
 export const useSignalStore = create<SignalStore>()(
@@ -92,6 +129,40 @@ export const useSignalStore = create<SignalStore>()(
       showLiveLayer: false,
       setShowLiveLayer: (show) => set({ showLiveLayer: show }),
       toggleShowLiveLayer: () => set((state) => ({ showLiveLayer: !state.showLiveLayer })),
+      savedMonitorQueries: [],
+      addMonitorQuery: (query, topicFilter) => set((state) => ({
+        savedMonitorQueries: [...state.savedMonitorQueries, {
+          id: crypto.randomUUID(),
+          query,
+          topicFilter,
+          createdAt: Date.now(),
+        }],
+      })),
+      removeMonitorQuery: (id) => set((state) => ({
+        savedMonitorQueries: state.savedMonitorQueries.filter((item) => item.id !== id),
+      })),
+      monitorActive: false,
+      setMonitorActive: (active) => set({ monitorActive: active }),
+      monitorIntervalMinutes: 5,
+      setMonitorIntervalMinutes: (n) => set({ monitorIntervalMinutes: n }),
+      monitorAlerts: [],
+      addMonitorAlert: (alert) => set((state) => ({
+        monitorAlerts: [{
+          ...alert,
+          id: crypto.randomUUID(),
+          dismissed: false,
+        }, ...state.monitorAlerts].slice(0, 20),
+      })),
+      dismissMonitorAlert: (id) => set((state) => ({
+        monitorAlerts: state.monitorAlerts.map((alert) =>
+          alert.id === id ? { ...alert, dismissed: true } : alert
+        ),
+      })),
+      clearMonitorAlerts: () => set({ monitorAlerts: [] }),
+      monitorLastRun: {},
+      setMonitorLastRun: (queryId, ts) => set((state) => ({
+        monitorLastRun: { ...state.monitorLastRun, [queryId]: ts },
+      })),
     }),
     {
       name: "signal-store-v1",
@@ -107,6 +178,8 @@ export const useSignalStore = create<SignalStore>()(
         analystRailOpen: state.analystRailOpen,
         opsTheme: state.opsTheme,
         showLiveLayer: state.showLiveLayer,
+        savedMonitorQueries: state.savedMonitorQueries,
+        monitorAlerts: state.monitorAlerts,
       }),
     }
   )
