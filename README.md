@@ -15,7 +15,7 @@ This section is intentionally formatted to match the assignment checklist.
 
 ### 1. Publicly accessible hosted web platform URL
 
-- Hosted URL: https://simppl-signal.vercel.app/explore
+- Hosted URL: https://simppl-signal.vercel.app
 
 ### 2. Detailed README with screenshots
 
