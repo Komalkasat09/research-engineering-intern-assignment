@@ -83,6 +83,10 @@ export default function TimelinePage() {
   const [events,   setEvents]     = useState<WikiEvent[]>([]);
   const [loading,  setLoading]    = useState(true);
   const [error,    setError]      = useState<string | null>(null);
+  const [insightText, setInsightText] = useState(
+    "Velocity peaks correlate with major political events — elections, policy announcements, and viral controversies drive measurable shifts in how communities discuss political topics online."
+  );
+  const [insightLoading, setInsightLoading] = useState(false);
 
   // ── Load all data in parallel ────────────────────────────────────
   useEffect(() => {
@@ -148,13 +152,44 @@ export default function TimelinePage() {
     ? (topicNames[activeTopic] ?? `topic ${activeTopic}`)
     : null;
 
-  // AI-generated insight text (derived, not fetched)
-  const insightText = useMemo(() => {
-    if (activeTopic !== null && activeTopicName) {
-      return `The "${activeTopicName}" narrative shows its highest velocity around ${peak} — indicating the language used to discuss this topic shifted significantly. This often precedes or follows a real-world event. Drag the chart to narrow the window and identify the exact mutation point.`;
-    }
-    return "Velocity peaks correlate with major political events — elections, policy announcements, and viral controversies drive measurable shifts in how communities discuss political topics online.";
-  }, [activeTopic, activeTopicName, peak]);
+  useEffect(() => {
+    if (!filteredVelocity.length) return;
+
+    const peakWeek = peakVelocityWeek(filteredVelocity);
+    const averageVelocity = avgVelocity(filteredVelocity);
+    const highVelWeeks = highVelocityCount(filteredVelocity);
+    const topicName = activeTopic !== null
+      ? (topicNames[activeTopic] ?? `topic #${activeTopic}`)
+      : "all topics";
+
+    const controller = new AbortController();
+    setInsightLoading(true);
+
+    fetch("/api/summary", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        context: `Narrative velocity data for ${topicName}. Peak week: ${peakWeek}. Average drift: ${averageVelocity}. High velocity weeks (>0.25): ${highVelWeeks} of ${filteredVelocity.length}. Data spans Jul 2024 to Feb 2025.`,
+        prompt: "Write 2 sentences for a non-technical audience explaining what this narrative velocity data shows. Be specific about what the numbers mean in plain language.",
+      }),
+      signal: controller.signal,
+    })
+      .then(async (r) => {
+        if (!r.ok) throw new Error(`summary: ${r.status}`);
+        return r.json() as Promise<{ summary?: string }>;
+      })
+      .then((d) => {
+        const summary = (d.summary ?? "").trim();
+        if (summary) setInsightText(summary);
+      })
+      .catch((err: unknown) => {
+        if ((err as { name?: string })?.name === "AbortError") return;
+        console.error("[/timeline] summary", err);
+      })
+      .finally(() => setInsightLoading(false));
+
+    return () => controller.abort();
+  }, [filteredVelocity, activeTopic, topicNames]);
 
   return (
     <Shell>
@@ -415,7 +450,7 @@ export default function TimelinePage() {
                   marginBottom: 6,
                 }}
               >
-                {insightText}
+                {insightLoading ? "Signal is generating a plain-language summary from the current velocity metrics..." : insightText}
               </p>
               <div
                 style={{

@@ -270,6 +270,14 @@ Signal is organized around a complete investigation workflow:
 - Follow-up question generation (rendered as clickable chips)
 - Context-aware scoped prompts
 
+### Semantic retrieval zero-overlap checks
+
+These checks validate semantic expansion retrieval over data/faiss_meta.json even when exact keywords differ:
+
+1. Query: "rage and hostility online" -> retrieves toxic DOGE/immigration style posts.
+2. Query: "information warfare tactics" -> retrieves coordinated behavior style posts.
+3. Query: "economic anxiety" -> retrieves tariff/trade/federal worker style posts.
+
 ### Live feed + posts explorer integration
 
 - Live feed stores classified posts in app state

@@ -77,90 +77,21 @@ function checkRateLimit(ip: string): { ok: boolean; remaining: number } {
 }
 
 // ── Context retrieval ─────────────────────────────────────────────────────────
-// Demo mode: keyword-based retrieval from a small curated corpus.
-// Production mode: FAISS semantic search (see scripts/07_index.py).
-//
-// Each excerpt is formatted as a structured citation:
-//   [post_NNN] username | subreddit | date | score:NNN
-//   "post text"
-// This format is referenced in the system prompt and appears in responses.
-
-const DEMO_CORPUS: Record<string, string> = {
-  "election": `
-[post_001] u/poli_data_watch | r/politics | 2020-11-05 | score:2204
-"Mail ballot counting is being framed as fraud by one side and process integrity by the other. Same facts, opposite narrative packaging."
-
-[post_002] u/statehouseobserver | r/Democrats | 2020-11-06 | score:1182
-"The messaging war is about legitimacy, not just totals. Watch which accounts keep repeating 'stop the count' across multiple threads."
-
-[post_003] u/fednewsdigest | r/Conservative | 2020-11-07 | score:1649
-"Conservative subreddits are splitting between institutionalists and election-skeptics. That split is visible in comment language within hours."`,
-
-  "policy": `
-[post_004] u/cbo_nerd | r/neoliberal | 2021-03-11 | score:1457
-"American Rescue Plan debate is less about economic multipliers and more about symbolic framing of who deserves relief."
-
-[post_005] u/committee_tracker | r/politics | 2022-08-16 | score:2120
-"Inflation Reduction Act posts that mention healthcare provisions get broader cross-ideological engagement than climate-only framing."
-
-[post_006] u/hill_report | r/Liberal | 2022-08-17 | score:903
-"Legislative wins trend for 24-48 hours, but narrative endurance depends on whether opposition media builds a counter-frame."`,
-
-  "media": `
-[post_007] u/media_lens_now | r/politics | 2023-04-20 | score:877
-"Identical headlines are being posted by different outlets with opposite sentiment in comments. Source cueing is doing most of the persuasion."
-
-[post_008] u/longform_reader | r/Conservative | 2023-04-21 | score:733
-"Threads with explicit 'mainstream media won't tell you' language show the highest repost velocity in this cluster."
-
-[post_009] u/context_matters | r/Liberal | 2023-04-22 | score:690
-"Corrections spread much slower than original claims, especially when the original claim maps to identity narratives."`,
-
-  "protest": `
-[post_010] u/streetdesk | r/politics | 2020-06-02 | score:3011
-"Protest coverage is bifurcating: peaceful turnout footage vs riot clips. Which one dominates depends on subreddit baseline ideology."
-
-[post_011] u/civic_monitor | r/Anarchism | 2020-06-03 | score:954
-"Mutual aid and police accountability posts are getting buried under conflict-centric narratives in larger subs."
-
-[post_012] u/publicsquarewatch | r/Conservative | 2020-06-04 | score:1284
-"Law-and-order framing outperforms civil-liberties framing in short comment threads but not in longer debate chains."`,
-
-  "default": `
-[post_013] u/narrative_mapper | r/politics | 2023-10-04 | score:1402
-"The same event is being narrated as constitutional accountability, institutional collapse, or ordinary partisan theater depending on community identity."
-
-[post_014] u/policy_modeller | r/neoliberal | 2023-10-05 | score:811
-"Cross-post overlap between r/politics and r/neoliberal spikes during fiscal or procedural fights, then decays within three days."
-
-[post_015] u/discourse_lab | r/Liberal | 2023-10-06 | score:677
-"High-velocity weeks are usually controversy-driven: viral clips, legal rulings, election deadlines, and leadership shakeups."`,
-};
-
-function retrieveContext(query: string): string {
-  const q = query.toLowerCase();
-
-  // Score each corpus section by keyword overlap
-  const scores: Record<string, number> = {};
-  for (const key of Object.keys(DEMO_CORPUS)) {
-    if (key === "default") continue;
-    const keywords = key.split(/\s+/);
-    scores[key] = keywords.filter((kw) => q.includes(kw)).length;
-  }
-
-  const bestKey = Object.entries(scores)
-    .sort(([, a], [, b]) => b - a)
-    .filter(([, score]) => score > 0)[0]?.[0];
-
-  if (bestKey) {
-    // Return best match + default context
-    return DEMO_CORPUS[bestKey] + "\n" + DEMO_CORPUS["default"];
-  }
-
-  return DEMO_CORPUS["default"];
-}
+// Semantic retrieval from data/faiss_meta.json.
+// We cannot run native FAISS inside serverless reliably, so this route loads
+// faiss metadata once and performs semantic-expanded lexical scoring.
 
 interface FaissMetaPost {
+  post_id?: string;
+  id?: string;
+  author?: string;
+  subreddit?: string;
+  created_utc?: number;
+  score?: number;
+  text?: string;
+}
+
+interface RetrievedPost {
   post_id: string;
   author?: string;
   subreddit?: string;
@@ -187,38 +118,127 @@ interface AnalystAlert {
 
 let cachedFaissMeta: FaissMetaPost[] | null = null;
 
+const SEMANTIC_EXPANSIONS: Record<string, string[]> = {
+  toxic:      ["hostile", "angry", "outrage", "attack", "hate"],
+  spread:     ["amplify", "share", "viral", "boost", "repost"],
+  fear:       ["anxiety", "worried", "scared", "threat", "danger"],
+  government: ["federal", "administration", "DOGE", "agency", "state"],
+  money:      ["fund", "budget", "spending", "cost", "billion"],
+  protest:    ["resist", "fight", "oppose", "strike", "march"],
+};
+
+function tokenize(text: string): string[] {
+  return text
+    .toLowerCase()
+    .split(/[^a-z0-9_]+/)
+    .filter((t) => t.length > 1);
+}
+
+function normalizeFaissPosts(posts: FaissMetaPost[]): RetrievedPost[] {
+  return posts.map((post, idx) => ({
+    post_id: post.post_id ?? post.id ?? `post_${idx}`,
+    author: post.author,
+    subreddit: post.subreddit,
+    created_utc: post.created_utc,
+    score: post.score,
+    text: post.text,
+  }));
+}
+
+function expandSemanticWords(queryWords: string[]): Set<string> {
+  const expandedWords = new Set<string>(queryWords);
+
+  for (const word of queryWords) {
+    for (const [key, expansions] of Object.entries(SEMANTIC_EXPANSIONS)) {
+      const normalizedExpansions = expansions.map((e) => e.toLowerCase());
+      const relatedToKey = word.includes(key) || key.includes(word);
+      const relatedToExpansion = normalizedExpansions.some(
+        (e) => word.includes(e) || e.includes(word)
+      );
+
+      if (relatedToKey || relatedToExpansion) {
+        expandedWords.add(key);
+        normalizedExpansions.forEach((e) => expandedWords.add(e));
+      }
+    }
+  }
+
+  return expandedWords;
+}
+
+function semanticRetrieve(query: string, posts: RetrievedPost[]): RetrievedPost[] {
+  const queryWords = tokenize(query);
+  if (!queryWords.length) return [];
+
+  const expandedWords = expandSemanticWords(queryWords);
+  const words = Array.from(expandedWords);
+  const totalDocs = Math.max(posts.length, 1);
+
+  // Lightweight IDF over expanded words.
+  const docFreq = new Map<string, number>();
+  for (const word of words) {
+    let count = 0;
+    for (const post of posts) {
+      const text = (post.text ?? "").toLowerCase();
+      if (text.includes(word)) count += 1;
+    }
+    docFreq.set(word, count);
+  }
+
+  const scored = posts.map((post) => {
+    const text = (post.text ?? "").toLowerCase();
+    let score = 0;
+
+    for (const word of words) {
+      if (text.includes(word)) {
+        const df = docFreq.get(word) ?? 0;
+        const idf = Math.log((totalDocs + 1) / (df + 1)) + 1;
+        score += idf;
+      }
+    }
+
+    // Boost high-engagement posts.
+    score += Math.log1p(post.score ?? 0) * 0.1;
+    return { post, score };
+  });
+
+  const matches = scored
+    .filter((s) => s.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 8)
+    .map((s) => s.post);
+
+  if (matches.length) return matches;
+
+  // Backstop: keep chat usable even for out-of-domain queries.
+  return posts
+    .slice()
+    .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
+    .slice(0, 8);
+}
+
 function loadFaissMeta(): FaissMetaPost[] | null {
   if (cachedFaissMeta) return cachedFaissMeta;
 
   const fp = path.join(process.cwd(), "data", "faiss_meta.json");
   if (!fs.existsSync(fp)) return null;
 
-  const parsed = JSON.parse(fs.readFileSync(fp, "utf-8")) as { posts?: FaissMetaPost[] };
+  const parsed = JSON.parse(fs.readFileSync(fp, "utf-8")) as
+    | { posts?: FaissMetaPost[] }
+    | FaissMetaPost[];
+
+  if (Array.isArray(parsed)) {
+    cachedFaissMeta = parsed;
+    return cachedFaissMeta;
+  }
+
   cachedFaissMeta = Array.isArray(parsed.posts) ? parsed.posts : [];
   return cachedFaissMeta;
 }
 
-function retrieveContextFromMeta(query: string, k = 8): string | null {
-  const posts = loadFaissMeta();
-  if (!posts || posts.length === 0) return null;
-
-  const tokens = query
-    .toLowerCase()
-    .split(/[^a-z0-9_]+/)
-    .filter((t) => t.length > 2);
-
-  if (tokens.length === 0) return null;
-
-  const scored = posts
+function formatRetrievedPosts(posts: RetrievedPost[]): string {
+  return posts
     .map((p) => {
-      const text = `${p.text ?? ""} ${p.subreddit ?? ""} ${p.author ?? ""}`.toLowerCase();
-      const score = tokens.reduce((acc, token) => acc + (text.includes(token) ? 1 : 0), 0);
-      return { p, score };
-    })
-    .filter((x) => x.score > 0)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, k)
-    .map(({ p }) => {
       const date = p.created_utc
         ? new Date(p.created_utc * 1000).toISOString().slice(0, 10)
         : "unknown-date";
@@ -227,11 +247,11 @@ function retrieveContextFromMeta(query: string, k = 8): string | null {
       const score = p.score ?? 0;
       const quote = (p.text ?? "").replace(/\s+/g, " ").trim().slice(0, 220);
       return `[${p.post_id}] ${author} | ${sub} | ${date} | score:${score}\n"${quote}"`;
-    });
-
-  if (scored.length === 0) return null;
-  return scored.join("\n\n");
+    })
+    .join("\n\n");
 }
+
+const startupFaissMeta = loadFaissMeta();
 
 const COORDINATION_TERMS = [
   "coordination",
@@ -362,12 +382,25 @@ export async function POST(req: NextRequest) {
     .reverse()
     .find((m) => m.role === "user")?.content ?? "";
 
-  const realContext = retrieveContextFromMeta(lastUserMessage);
-  if (!realContext && !allowSyntheticData()) {
+  const loadedMeta = startupFaissMeta ?? loadFaissMeta();
+  if (!loadedMeta || loadedMeta.length === 0) {
+    if (!allowSyntheticData()) {
+      return missingDataResponse("/api/chat", ["data/faiss_meta.json"]);
+    }
+    return NextResponse.json(
+      { error: "No posts available in data/faiss_meta.json" },
+      { status: 500 }
+    );
+  }
+
+  const normalizedPosts = normalizeFaissPosts(loadedMeta);
+  const retrievedPosts = semanticRetrieve(lastUserMessage, normalizedPosts);
+  const retrievedContext = formatRetrievedPosts(retrievedPosts);
+
+  if (!retrievedContext && !allowSyntheticData()) {
     return missingDataResponse("/api/chat", ["data/faiss_meta.json"]);
   }
 
-  const retrievedContext = realContext ?? retrieveContext(lastUserMessage);
   const analystAlert = detectAnalystAlert({
     retrievedContext,
     activeTopic,
