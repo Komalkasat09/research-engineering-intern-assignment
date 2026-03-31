@@ -60,7 +60,7 @@ Thought process behind trade-offs:
 
 ### 4. Video walkthrough link (YouTube or Google Drive)
 
-- Video URL: https://youtu.be/5VJBWAujIt4
+- Video URL: https://youtu.be/z1KKmrpFlUM
 
 ### 5. AI prompt log used during development
 
